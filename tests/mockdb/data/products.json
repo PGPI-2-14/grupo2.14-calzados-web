@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "category": 1,
+    "name": "Zapatilla Urbana",
+    "slug": "zapatilla-urbana",
+    "description": "Zapatilla casual para uso diario.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "49.99",
+    "available": true
+  },
+  {
+    "id": 2,
+    "category": 2,
+    "name": "Zapatilla Running",
+    "slug": "zapatilla-running",
+    "description": "Para entrenamientos y carreras.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "89.90",
+    "available": true
+  }
+]

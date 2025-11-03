@@ -25,7 +25,6 @@ INSTALLED_APPS = [
     'shop.apps.ShopConfig',
     'cart.apps.CartConfig',
     'order.apps.OrderConfig',
-    'coupons.apps.CouponsConfig',
 ]
 
 MIDDLEWARE = [
@@ -61,12 +60,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
+# En desarrollo se usa MockDB (sin base de datos real).
+# En despliegue, el cliente deberá definir su propia base de datos en production.py.
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.dummy',  # evita que Django intente abrir SQLite
     }
 }
+
 
 
 # Password validation
@@ -113,3 +114,8 @@ MEDIA_URL = '/media/'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 CART_SESSION_ID = 'cart'
+
+# --- Modo MockDB: evitar uso de tablas de sesión ---
+if os.environ.get("USE_MOCKDB") == "1":
+    SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+    print("Sesiones almacenadas en cookies (sin usar tablas SQL).")
