@@ -18,5 +18,135 @@
     "image_url": "/static/img/placeholder.png",
     "price": "89.90",
     "available": true
+  },
+  {
+    "id": 3,
+    "category": 3,
+    "name": "Bota de Cuero Clásica",
+    "slug": "bota-cuero-clasica",
+    "description": "Bota elegante de cuero genuino con suela antideslizante.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "129.99",
+    "available": true
+  },
+  {
+    "id": 4,
+    "category": 4,
+    "name": "Sandalia Playa",
+    "slug": "sandalia-playa",
+    "description": "Ligera, resistente al agua y cómoda para el verano.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "24.90",
+    "available": true
+  },
+  {
+    "id": 5,
+    "category": 6,
+    "name": "Zapato Oxford",
+    "slug": "zapato-oxford",
+    "description": "Clásico zapato formal de cordones para ocasiones especiales.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "99.00",
+    "available": true
+  },
+  {
+    "id": 6,
+    "category": 5,
+    "name": "Zapatilla Infantil Velcro",
+    "slug": "zapatilla-infantil-velcro",
+    "description": "Cómoda zapatilla para niños con cierre de velcro.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "39.50",
+    "available": true
+  },
+  {
+    "id": 7,
+    "category": 7,
+    "name": "Bota de Montaña Trek",
+    "slug": "bota-montana-trek",
+    "description": "Bota de trekking resistente con soporte de tobillo.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "149.99",
+    "available": true
+  },
+  {
+    "id": 8,
+    "category": 1,
+    "name": "Mocasín Casual",
+    "slug": "mocasin-casual",
+    "description": "Calzado cómodo de estilo informal con acabado suave.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "59.90",
+    "available": true
+  },
+  {
+    "id": 9,
+    "category": 2,
+    "name": "Zapatilla de Crossfit",
+    "slug": "zapatilla-crossfit",
+    "description": "Zapatilla deportiva con refuerzo lateral para entrenamientos intensos.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "99.99",
+    "available": true
+  },
+  {
+    "id": 10,
+    "category": 4,
+    "name": "Sandalia de Cuero",
+    "slug": "sandalia-cuero",
+    "description": "Sandalia de cuero genuino con plantilla acolchada para máximo confort.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "54.90",
+    "available": true
+  },
+  {
+    "id": 11,
+    "category": 3,
+    "name": "Bota Urbana",
+    "slug": "bota-urbana",
+    "description": "Bota versátil ideal para el día a día con diseño moderno y suela resistente.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "119.99",
+    "available": true
+  },
+  {
+    "id": 12,
+    "category": 2,
+    "name": "Zapatilla de Training",
+    "slug": "zapatilla-training",
+    "description": "Calzado deportivo multifunción para gimnasio o actividades físicas variadas.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "79.90",
+    "available": true
+  },
+  {
+    "id": 13,
+    "category": 6,
+    "name": "Zapato Derby",
+    "slug": "zapato-derby",
+    "description": "Zapato formal con acabado pulido y costura elegante, ideal para oficina.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "109.00",
+    "available": true
+  },
+  {
+    "id": 14,
+    "category": 5,
+    "name": "Botín Infantil",
+    "slug": "botin-infantil",
+    "description": "Botín ligero y resistente para niños, fácil de poner y quitar.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "44.50",
+    "available": true
+  },
+  {
+    "id": 15,
+    "category": 7,
+    "name": "Zapato Trekking Ligero",
+    "slug": "zapato-trekking-ligero",
+    "description": "Calzado outdoor con excelente agarre y materiales transpirables.",
+    "image_url": "/static/img/placeholder.png",
+    "price": "134.99",
+    "available": true
   }
 ]
