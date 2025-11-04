@@ -1,0 +1,4 @@
+[
+  { "id": 1, "name": "Acme", "image_url": "/static/img/brand-acme.png" },
+  { "id": 2, "name": "RunnerX", "image_url": "/static/img/brand-runnerx.png" }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "first_name": "Ana",
+    "last_name": "Sanchez",
+    "email": "ana@example.com",
+    "phone": "+34 600 000 001",
+    "address": "Calle Mayor 1",
+    "city": "Madrid",
+    "postal_code": "28001",
+    "password": "hashedpwd"
+  }
+]

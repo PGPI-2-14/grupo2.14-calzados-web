@@ -1,0 +1,4 @@
+[
+  { "id": 1, "product": 1, "image_url": "/static/img/placeholder.png", "is_primary": true },
+  { "id": 2, "product": 2, "image_url": "/static/img/placeholder.png", "is_primary": true }
+]

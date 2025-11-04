@@ -42,6 +42,32 @@ class FakeProduct:
 
 
 @dataclass
+class FakeBrand:
+    id: int
+    name: str
+    image: Any
+
+    def __str__(self) -> str:
+        return self.name
+
+
+@dataclass
+class FakeProductImage:
+    id: int
+    product: 'FakeProduct'
+    image: Any
+    is_primary: bool
+
+
+@dataclass
+class FakeProductSize:
+    id: int
+    product: 'FakeProduct'
+    size: str
+    stock: int
+
+
+@dataclass
 class FakeOrderItem:
     id: int
     order: Any  # genérico; no usado por templates
@@ -54,6 +80,37 @@ class FakeOrderItem:
 
     def get_cost(self) -> Decimal:
         return self.price * self.quantity
+
+
+@dataclass
+class FakeCustomer:
+    id: int
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
+    address: str
+    city: str
+    postal_code: str
+    password: str
+
+    def __str__(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
+
+@dataclass
+class FakeCart:
+    id: int
+    customer: FakeCustomer
+
+
+@dataclass
+class FakeCartItem:
+    id: int
+    cart: FakeCart
+    product: FakeProduct
+    size: str
+    quantity: int
 
 
 # --- Fake queryset/manager ---
@@ -145,8 +202,9 @@ def _matches(obj: Any, filters: Dict[str, Any]) -> bool:
 
 def _construct_fake_for_model(model_class: Type[Any], kwargs: Dict[str, Any]) -> Any:
     """Crea una instancia de la fake class adecuada para el modelo Django."""
-    from shop.models import Category as DjangoCategory, Product as DjangoProduct
-    from order.models import OrderItem as DjangoOrderItem
+    from shop.models import Category as DjangoCategory, Product as DjangoProduct, Brand as DjangoBrand, ProductImage as DjangoProductImage, ProductSize as DjangoProductSize
+    from order.models import OrderItem as DjangoOrderItem, Customer as DjangoCustomer
+    from cart.models import Cart as DjangoCart, CartItem as DjangoCartItem
 
     if model_class.__name__ == 'Category' and model_class is DjangoCategory:
         return FakeCategory(id=kwargs['id'], name=kwargs['name'], slug=kwargs['slug'])
@@ -167,6 +225,21 @@ def _construct_fake_for_model(model_class: Type[Any], kwargs: Dict[str, Any]) ->
             image=image or SimpleNamespace(url='')
         )
 
+    if model_class.__name__ == 'Brand' and model_class is DjangoBrand:
+        image = kwargs.get('image')
+        if isinstance(image, str):
+            image = SimpleNamespace(url=image)
+        return FakeBrand(id=kwargs['id'], name=kwargs['name'], image=image or SimpleNamespace(url=''))
+
+    if model_class.__name__ == 'ProductImage' and model_class is DjangoProductImage:
+        img = kwargs.get('image')
+        if isinstance(img, str):
+            img = SimpleNamespace(url=img)
+        return FakeProductImage(id=kwargs['id'], product=kwargs['product'], image=img or SimpleNamespace(url=''), is_primary=bool(kwargs.get('is_primary', False)))
+
+    if model_class.__name__ == 'ProductSize' and model_class is DjangoProductSize:
+        return FakeProductSize(id=kwargs['id'], product=kwargs['product'], size=str(kwargs['size']), stock=int(kwargs.get('stock', 0)))
+
     if model_class.__name__ == 'OrderItem' and model_class is DjangoOrderItem:
         return FakeOrderItem(
             id=kwargs['id'],
@@ -175,5 +248,18 @@ def _construct_fake_for_model(model_class: Type[Any], kwargs: Dict[str, Any]) ->
             price=Decimal(str(kwargs.get('price', '0'))),
             quantity=int(kwargs.get('quantity', 1))
         )
+
+    if model_class.__name__ == 'Customer' and model_class is DjangoCustomer:
+        return FakeCustomer(
+            id=kwargs['id'], first_name=kwargs['first_name'], last_name=kwargs['last_name'],
+            email=kwargs['email'], phone=kwargs['phone'], address=kwargs['address'],
+            city=kwargs['city'], postal_code=kwargs['postal_code'], password=kwargs['password']
+        )
+
+    if model_class.__name__ == 'Cart' and model_class is DjangoCart:
+        return FakeCart(id=kwargs['id'], customer=kwargs['customer'])
+
+    if model_class.__name__ == 'CartItem' and model_class is DjangoCartItem:
+        return FakeCartItem(id=kwargs['id'], cart=kwargs['cart'], product=kwargs['product'], size=str(kwargs['size']), quantity=int(kwargs['quantity']))
 
     return SimpleNamespace(**kwargs)
