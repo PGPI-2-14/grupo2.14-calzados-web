@@ -134,7 +134,8 @@ def customer_create(request: HttpRequest) -> HttpResponse:
 
 @require_admin
 def customer_edit(request: HttpRequest, id: int) -> HttpResponse:
-    customer = UserAccount.objects.get(id=id)
+    # Asegurar que solo editamos cuentas de rol 'customer'
+    customer = UserAccount.objects.get(id=id, role=UserAccount.ROLE_CUSTOMER)
     if request.method == 'POST':
         form = CustomerForm(request.POST)
         if form.is_valid():
@@ -168,17 +169,17 @@ def customer_delete(request: HttpRequest, id: int) -> HttpResponse:
     if request.method == 'POST':
         # Intentar borrar el registro
         try:
-            u = UserAccount.objects.get(id=id)
+            u = UserAccount.objects.get(id=id, role=UserAccount.ROLE_CUSTOMER)
             u.delete()
         except Exception:
             # En caso de MockDB, sobrescribir si hace falta
-            remaining = [c for c in UserAccount.objects.all() if getattr(c, 'id', None) != id]
+            remaining = [c for c in UserAccount.objects.filter(role=UserAccount.ROLE_CUSTOMER) if getattr(c, 'id', None) != id]
             try:
                 UserAccount.objects.bulk_set(remaining)
             except Exception:
                 pass
         return redirect(reverse('accounts:admin_customers'))
-    customer = UserAccount.objects.get(id=id)
+    customer = UserAccount.objects.get(id=id, role=UserAccount.ROLE_CUSTOMER)
     return render(request, 'accounts/admin/customers/confirm_delete.html', {'customer': customer})
 
 

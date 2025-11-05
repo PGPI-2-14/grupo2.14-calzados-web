@@ -63,6 +63,24 @@ class MockDB:
         if UserAccount:
             users.extend([_to_fake_user(d) for d in admins_data])
             users.extend([_to_fake_user_from_customer(d) for d in customers_data])
+            # Asegurar IDs únicos entre admins y clientes (evitar MultipleObjectsReturned en get(id=...))
+            # Estrategia: mantener el primer uso de cada id válido y reasignar para None, <=0 o duplicados posteriores.
+            used_ids: set[int] = set()
+            max_id = 0
+            # Determinar max_id inicial
+            for u in users:
+                uid = getattr(u, 'id', None)
+                if isinstance(uid, int) and uid > max_id:
+                    max_id = uid
+            # Normalizar
+            for u in users:
+                uid = getattr(u, 'id', None)
+                if not isinstance(uid, int) or uid <= 0 or uid in used_ids:
+                    max_id += 1
+                    setattr(u, 'id', max_id)
+                    used_ids.add(max_id)
+                else:
+                    used_ids.add(uid)
         users_by_id = {u.id: u for u in users} if users else {}
 
         carts = [_to_fake_cart(d, customers_by_id) for d in self._data.get('carts', [])]
@@ -391,7 +409,8 @@ def _to_fake_user_from_customer(u: Dict[str, Any]) -> FakeUserAccount:
     from accounts.models import UserAccount
     mgr = FakeManager(UserAccount, [])
     return mgr.create(
-        id=int(u['id']) if 'id' in u else None,
+        # No forzamos el id para evitar colisiones con admin.json; dejamos que el manager asigne uno único
+        id=None,
         email=u.get('email', ''),
         password_hash=u.get('password_hash', ''),
         role='customer',
