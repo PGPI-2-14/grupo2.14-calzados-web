@@ -79,3 +79,31 @@ class PaymentForm(forms.Form):
     payment_method = forms.ChoiceField(
         label='Método de pago', choices=PAYMENT_CHOICES, widget=forms.RadioSelect, initial='cod'
     )
+
+
+class CustomerForm(forms.Form):
+    email = forms.EmailField(label='Email')
+    role = forms.ChoiceField(label='Rol', choices=(), initial='customer')
+    first_name = forms.CharField(label='Nombre', max_length=50, required=False)
+    last_name = forms.CharField(label='Apellidos', max_length=50, required=False)
+    is_active = forms.BooleanField(label='Activo', required=False, initial=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Importar UserAccount para leer las choices
+        try:
+            from .models import UserAccount
+            self.fields['role'].choices = list(UserAccount.ROLE_CHOICES)
+        except Exception:
+            # Fallback si no se puede importar (tests/mock setups)
+            self.fields['role'].choices = [('customer', 'Cliente'), ('admin', 'Administrador')]
+
+    def to_kwargs(self) -> dict:
+        cd = self.cleaned_data
+        return {
+            'email': cd.get('email', ''),
+            'role': cd.get('role', 'customer'),
+            'first_name': cd.get('first_name', '') or '',
+            'last_name': cd.get('last_name', '') or '',
+            'is_active': bool(cd.get('is_active', True)),
+        }
