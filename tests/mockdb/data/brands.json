@@ -1,4 +1,9 @@
 [
-  { "id": 1, "name": "Acme", "image_url": "/static/img/brand-acme.png" },
-  { "id": 2, "name": "RunnerX", "image_url": "/static/img/brand-runnerx.png" }
+  { "id": 1, "name": "Adidas", "image_url": "/static/img/brand-adidas.png" },
+  { "id": 2, "name": "Nike", "image_url": "/static/img/brand-nike.png" },
+  { "id": 3, "name": "Oxford", "image_url": "/static/img/brand-oxford.png" },
+  { "id": 4, "name": "Reebok", "image_url": "/static/img/brand-reebok.png" },
+  { "id": 5, "name": "Puma", "image_url": "/static/img/brand-puma.png" },
+  { "id": 6, "name": "Derby", "image_url": "/static/img/brand-derby.png" },
+  { "id": 7, "name": "Salomon", "image_url": "/static/img/brand-salomon.png" }
 ]
