@@ -13,6 +13,10 @@ class Customer(models.Model):
     city = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=20)
     password = models.CharField(max_length=128)
+    # Preparado para enlazar con el usuario de la app (mock auth o futuro login)
+    user = models.OneToOneField(
+        'accounts.UserAccount', related_name='customer_profile', on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     class Meta:
         ordering = ('-created',)

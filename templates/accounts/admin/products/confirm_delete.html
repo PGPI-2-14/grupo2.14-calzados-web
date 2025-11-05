@@ -1,0 +1,12 @@
+{% extends 'shop/base/base.html' %}
+{% block content %}
+<div class="container py-4">
+  <h1>Eliminar producto</h1>
+  <p>¿Seguro que quieres eliminar el producto <strong>{{ product.name }}</strong>?</p>
+  <form method="post">
+    {% csrf_token %}
+    <a class="btn btn-outline-secondary" href="{% url 'accounts:admin_products' %}">Cancelar</a>
+    <button class="btn btn-danger" type="submit">Eliminar</button>
+  </form>
+</div>
+{% endblock %}

@@ -33,6 +33,14 @@ class FakeProduct:
     available: bool
     category: FakeCategory
     image: Any  # debe tener atributo .url
+    # Campos adicionales del modelo real (opcionales en mock)
+    offer_price: Decimal = Decimal("0")
+    gender: str = "unisex"
+    color: str = ""
+    material: str = ""
+    stock: int = 0
+    is_featured: bool = False
+    brand: Optional['FakeBrand'] = None
 
     def __str__(self) -> str:
         return self.name
@@ -83,6 +91,36 @@ class FakeOrderItem:
 
 
 @dataclass
+class FakeOrder:
+    id: int
+    customer: Optional[FakeCustomer]
+    order_number: str
+    status: str
+    subtotal: Decimal
+    taxes: Decimal
+    shipping_cost: Decimal
+    discount: Decimal
+    total: Decimal
+    paid: bool = False
+    first_name: str = ""
+    last_name: str = ""
+    email: str = ""
+    address: str = ""
+    postal_code: str = ""
+    city: str = ""
+    payment_method: str = ""
+    shipping_address: str = ""
+    phone: str = ""
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"Order {self.order_number or self.id}"
+
+    def get_total_cost(self) -> Decimal:
+        # Puede ser calculado desde OrderItem externamente si no hay total
+        return self.total
+
+
+@dataclass
 class FakeCustomer:
     id: int
     first_name: str
@@ -111,6 +149,17 @@ class FakeCartItem:
     product: FakeProduct
     size: str
     quantity: int
+
+
+@dataclass
+class FakeUserAccount:
+    id: int
+    email: str
+    password_hash: str
+    role: str
+    first_name: str
+    last_name: str
+    is_active: bool
 
 
 # --- Fake queryset/manager ---
@@ -203,8 +252,12 @@ def _matches(obj: Any, filters: Dict[str, Any]) -> bool:
 def _construct_fake_for_model(model_class: Type[Any], kwargs: Dict[str, Any]) -> Any:
     """Crea una instancia de la fake class adecuada para el modelo Django."""
     from shop.models import Category as DjangoCategory, Product as DjangoProduct, Brand as DjangoBrand, ProductImage as DjangoProductImage, ProductSize as DjangoProductSize
-    from order.models import OrderItem as DjangoOrderItem, Customer as DjangoCustomer
+    from order.models import Order as DjangoOrder, OrderItem as DjangoOrderItem, Customer as DjangoCustomer
     from cart.models import Cart as DjangoCart, CartItem as DjangoCartItem
+    try:
+        from accounts.models import UserAccount as DjangoUserAccount
+    except Exception:  # pragma: no cover - accounts may not be installed in some contexts
+        DjangoUserAccount = None  # type: ignore
 
     if model_class.__name__ == 'Category' and model_class is DjangoCategory:
         return FakeCategory(id=kwargs['id'], name=kwargs['name'], slug=kwargs['slug'])
@@ -216,13 +269,22 @@ def _construct_fake_for_model(model_class: Type[Any], kwargs: Dict[str, Any]) ->
         image = kwargs.get('image')
         if isinstance(image, str):
             image = SimpleNamespace(url=image)
+        brand = kwargs.get('brand')
+        # brand puede ser None o FakeBrand
         return FakeProduct(
             id=kwargs['id'], name=kwargs['name'], slug=kwargs['slug'],
             description=kwargs.get('description', ''),
             price=Decimal(str(kwargs.get('price', '0'))),
             available=bool(kwargs.get('available', True)),
             category=cat,
-            image=image or SimpleNamespace(url='')
+            image=image or SimpleNamespace(url=''),
+            offer_price=Decimal(str(kwargs.get('offer_price', '0'))),
+            gender=str(kwargs.get('gender', 'unisex')),
+            color=str(kwargs.get('color', '')),
+            material=str(kwargs.get('material', '')),
+            stock=int(kwargs.get('stock', 0)),
+            is_featured=bool(kwargs.get('is_featured', False)),
+            brand=brand if isinstance(brand, FakeBrand) else None,
         )
 
     if model_class.__name__ == 'Brand' and model_class is DjangoBrand:
@@ -249,6 +311,32 @@ def _construct_fake_for_model(model_class: Type[Any], kwargs: Dict[str, Any]) ->
             quantity=int(kwargs.get('quantity', 1))
         )
 
+    if model_class.__name__ == 'Order' and model_class is DjangoOrder:
+        cust = kwargs.get('customer')
+        if cust is not None and not isinstance(cust, FakeCustomer):
+            raise AssertionError('Order.customer debe ser FakeCustomer o None en modo mock')
+        return FakeOrder(
+            id=kwargs['id'],
+            customer=cust,
+            order_number=str(kwargs.get('order_number', '')),
+            status=str(kwargs.get('status', 'pending')),
+            subtotal=Decimal(str(kwargs.get('subtotal', '0'))),
+            taxes=Decimal(str(kwargs.get('taxes', '0'))),
+            shipping_cost=Decimal(str(kwargs.get('shipping_cost', '0'))),
+            discount=Decimal(str(kwargs.get('discount', '0'))),
+            total=Decimal(str(kwargs.get('total', '0'))),
+            paid=bool(kwargs.get('paid', False)),
+            first_name=str(kwargs.get('first_name', '')),
+            last_name=str(kwargs.get('last_name', '')),
+            email=str(kwargs.get('email', '')),
+            address=str(kwargs.get('address', '')),
+            postal_code=str(kwargs.get('postal_code', '')),
+            city=str(kwargs.get('city', '')),
+            payment_method=str(kwargs.get('payment_method', '')),
+            shipping_address=str(kwargs.get('shipping_address', '')),
+            phone=str(kwargs.get('phone', '')),
+        )
+
     if model_class.__name__ == 'Customer' and model_class is DjangoCustomer:
         return FakeCustomer(
             id=kwargs['id'], first_name=kwargs['first_name'], last_name=kwargs['last_name'],
@@ -261,5 +349,16 @@ def _construct_fake_for_model(model_class: Type[Any], kwargs: Dict[str, Any]) ->
 
     if model_class.__name__ == 'CartItem' and model_class is DjangoCartItem:
         return FakeCartItem(id=kwargs['id'], cart=kwargs['cart'], product=kwargs['product'], size=str(kwargs['size']), quantity=int(kwargs['quantity']))
+
+    if DjangoUserAccount and model_class.__name__ == 'UserAccount' and model_class is DjangoUserAccount:
+        return FakeUserAccount(
+            id=kwargs['id'],
+            email=kwargs['email'],
+            password_hash=kwargs.get('password_hash', ''),
+            role=kwargs.get('role', 'customer'),
+            first_name=kwargs.get('first_name', ''),
+            last_name=kwargs.get('last_name', ''),
+            is_active=bool(kwargs.get('is_active', True)),
+        )
 
     return SimpleNamespace(**kwargs)
