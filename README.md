@@ -23,9 +23,10 @@ venv\Scripts\activate
 ./run_mockdb.ps1
 ```
 
-2) Inicia sesión de admin de depuración (solo en MockDB):
+2) Inicia sesión de admin de depuración o de customer(solo en MockDB):
 
 - /accounts/debug/login-admin/
+- /accounts/debug/login-customer/
 
 3) Páginas a revisar (admin-lite):
 
@@ -38,7 +39,11 @@ venv\Scripts\activate
 - Productos — alta, edición y borrado:
 	- /accounts/admin-lite/products/
 
-4) Checkout (mock) — entrega y pago:
+4) Probar a consultar pedido con ID 1(siendo customer):
+
+- /accounts/api/orders/1/
+
+5) Checkout (mock) — entrega y pago:
 
 - Entrega (forma de envío, datos de entrega y estimación de costes):
 	- /accounts/admin-lite/checkout/delivery/
