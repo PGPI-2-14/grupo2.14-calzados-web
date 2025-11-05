@@ -17,7 +17,10 @@
       <div class="card"><div class="card-body"><strong>Ingresos</strong><div class="h4">{{ revenue }}</div></div></div>
     </div>
   </div>
-  <p><a class="btn btn-primary" href="{% url 'accounts:admin_orders' %}">Ver pedidos</a></p>
+  <p>
+    <a class="btn btn-primary" href="{% url 'accounts:admin_orders' %}">Ver pedidos</a>
+    <a class="btn btn-outline-secondary ms-2" href="{% url 'accounts:admin_checkout_delivery' %}">Probar checkout (mock)</a>
+  </p>
   {% endif %}
   <p>Esta sección está protegida por rol ADMIN (sesión). Aquí se integrarán:
     <ul>

@@ -1,6 +1,7 @@
 from typing import List, Tuple
 from django import forms
 from shop.models import Category, Product, Brand
+from order.shipping import method_choices
 
 
 class ProductForm(forms.Form):
@@ -53,3 +54,28 @@ class ProductForm(forms.Form):
             brand = Brand.objects.get(id=int(brand_id))
             kwargs['brand'] = brand
         return kwargs
+
+
+class DeliveryForm(forms.Form):
+    first_name = forms.CharField(label='Nombre', max_length=50)
+    last_name = forms.CharField(label='Apellidos', max_length=50)
+    email = forms.EmailField(label='Email')
+    address = forms.CharField(label='Dirección', max_length=250)
+    postal_code = forms.CharField(label='Código postal', max_length=20)
+    city = forms.CharField(label='Ciudad', max_length=100)
+    shipping_method = forms.ChoiceField(label='Forma de entrega', choices=(), required=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['shipping_method'].choices = method_choices()
+        self.fields['shipping_method'].initial = 'home'
+
+
+class PaymentForm(forms.Form):
+    PAYMENT_CHOICES = (
+        ('cod', 'Contra reembolso'),
+        ('gateway', 'Tarjeta (simulada)'),
+    )
+    payment_method = forms.ChoiceField(
+        label='Método de pago', choices=PAYMENT_CHOICES, widget=forms.RadioSelect, initial='cod'
+    )

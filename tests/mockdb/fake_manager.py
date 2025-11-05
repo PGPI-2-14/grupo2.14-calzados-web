@@ -102,6 +102,7 @@ class FakeOrder:
     discount: Decimal
     total: Decimal
     paid: bool = False
+    shipping_method: str = ""
     first_name: str = ""
     last_name: str = ""
     email: str = ""
@@ -326,6 +327,7 @@ def _construct_fake_for_model(model_class: Type[Any], kwargs: Dict[str, Any]) ->
             discount=Decimal(str(kwargs.get('discount', '0'))),
             total=Decimal(str(kwargs.get('total', '0'))),
             paid=bool(kwargs.get('paid', False)),
+            shipping_method=str(kwargs.get('shipping_method', '')),
             first_name=str(kwargs.get('first_name', '')),
             last_name=str(kwargs.get('last_name', '')),
             email=str(kwargs.get('email', '')),

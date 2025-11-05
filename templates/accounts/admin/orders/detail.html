@@ -3,6 +3,7 @@
 <h2>Pedido {{ order.order_number|default:order.id }}</h2>
 <p><strong>Estado:</strong> {{ order.status }} {% if order.paid %}(pagado){% endif %}</p>
 <p><strong>Cliente:</strong> {% if order.customer %}{{ order.customer.first_name }} {{ order.customer.last_name }} ({{ order.customer.email }}){% else %}-{% endif %}</p>
+<p><strong>Envío:</strong> {{ order.shipping_method|default:"-" }} (coste: {{ order.shipping_cost }})</p>
 <p><strong>Total:</strong> {{ order.total }}</p>
 <form method="post" action="{% url 'accounts:admin_order_update_status' order.id %}">
   {% csrf_token %}

@@ -15,6 +15,9 @@ urlpatterns = [
     path('admin-lite/products/new/', admin_views.product_create, name='admin_product_create'),
     path('admin-lite/products/<int:id>/edit/', admin_views.product_edit, name='admin_product_edit'),
     path('admin-lite/products/<int:id>/delete/', admin_views.product_delete, name='admin_product_delete'),
+        # Checkout (solo pruebas, admin-lite)
+        path('admin-lite/checkout/delivery/', admin_views.checkout_delivery, name='admin_checkout_delivery'),
+        path('admin-lite/checkout/payment/', admin_views.checkout_payment, name='admin_checkout_payment'),
     # Ventas y pedidos (admin-lite)
     path('admin-lite/sales/', admin_views.sales_dashboard, name='admin_sales_dashboard'),
     path('admin-lite/orders/', admin_views.order_list, name='admin_orders'),

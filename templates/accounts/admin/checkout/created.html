@@ -1,0 +1,23 @@
+{% extends 'shop/base/base.html' %}
+{% block content %}
+<div class="container">
+  <h1>Pedido creado (pruebas)</h1>
+  <p>Gracias. Tu pedido <strong>#{{ order.id }}</strong> ha sido creado para pruebas.</p>
+  <div class="row">
+    <div class="col-md-6">
+      <h4>Resumen</h4>
+      <p>Envío: {{ order.shipping_method|default:"-" }} (coste: {{ order.shipping_cost|default:"0" }})</p>
+      <h5>Total: {{ order.total|default:order.total_price }}</h5>
+    </div>
+    <div class="col-md-6">
+      <h4>Entrega</h4>
+      {% if order.shipping_method == 'store' %}
+        <p>Retiro en tienda</p>
+      {% else %}
+        <p>{{ order.address }}, {{ order.city }}, {{ order.postal_code }}</p>
+      {% endif %}
+    </div>
+  </div>
+  <p class="mt-3"><a href="{% url 'accounts:admin_orders' %}" class="btn btn-secondary btn-sm">Ver pedidos</a></p>
+</div>
+{% endblock %}

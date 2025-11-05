@@ -6,9 +6,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
 from accounts.utils import require_admin
-from accounts.forms import ProductForm
+from accounts.forms import ProductForm, DeliveryForm, PaymentForm
 from shop.models import Product, Category, Brand
 from order.models import Order, OrderItem
+from cart.cart import Cart
+from order.shipping import compute_shipping, method_name
 
 
 @require_admin
@@ -177,3 +179,90 @@ def order_update_status(request: HttpRequest, id: int) -> HttpResponse:
     if paid_flag is not None:
         order.paid = bool(paid_flag)
     return redirect(reverse('accounts:admin_order_detail', args=[id]))
+
+
+# -------------------- CHECKOUT (ADMIN-LITE, SOLO PRUEBAS) --------------------
+
+ADMIN_CHECKOUT_KEY = 'admin_checkout_data'
+
+
+@require_admin
+def checkout_delivery(request: HttpRequest) -> HttpResponse:
+    cart = Cart(request)
+    if request.method == 'POST':
+        form = DeliveryForm(request.POST)
+        if form.is_valid():
+            request.session[ADMIN_CHECKOUT_KEY] = form.cleaned_data
+            return redirect(reverse('accounts:admin_checkout_payment'))
+    else:
+        form = DeliveryForm()
+    # Estimación con método por defecto
+    subtotal = float(cart.get_total_price())
+    method_code = form.fields['shipping_method'].initial or 'home'
+    shipping_estimate = compute_shipping(subtotal, method_code)
+    total_estimate = subtotal + shipping_estimate
+    return render(request, 'accounts/admin/checkout/delivery.html', {
+        'cart': cart,
+        'form': form,
+        'shipping_estimate': shipping_estimate,
+        'total_estimate': total_estimate,
+        'selected_method': method_code,
+    })
+
+
+@require_admin
+def checkout_payment(request: HttpRequest) -> HttpResponse:
+    cart = Cart(request)
+    data = request.session.get(ADMIN_CHECKOUT_KEY) or {}
+    if not data:
+        return redirect(reverse('accounts:admin_checkout_delivery'))
+    if request.method == 'POST':
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            payment_method = form.cleaned_data['payment_method']
+            subtotal = float(cart.get_total_price())
+            method_code = data.get('shipping_method', 'home')
+            shipping_cost = compute_shipping(subtotal, method_code)
+            total = subtotal + shipping_cost
+            # Si el cliente elige contrareembolso, aceptamos el pedido (estado 'processing') sin marcar como pagado.
+            order_status = 'processing' if payment_method == 'cod' else 'pending'
+            # Crear pedido en MockDB
+            next_id = getattr(Order.objects, '_next_id', 1)
+            order = Order.objects.create(
+                id=next_id,
+                first_name=data.get('first_name', ''),
+                last_name=data.get('last_name', ''),
+                email=data.get('email', ''),
+                address=data.get('address', ''),
+                postal_code=data.get('postal_code', ''),
+                city=data.get('city', ''),
+                order_number=f"MOCK-{next_id:04d}",
+                status=order_status,
+                subtotal=str(subtotal),
+                shipping_cost=str(shipping_cost),
+                shipping_method=method_code,
+                taxes='0', discount='0', total=str(total),
+                paid=bool(payment_method == 'gateway'),
+                payment_method=payment_method,
+            )
+            for item in cart:
+                OrderItem.objects.create(order=order, product=item['product'], price=item['price'], quantity=item['quantity'])
+            cart.clear()
+            request.session.pop(ADMIN_CHECKOUT_KEY, None)
+            return render(request, 'accounts/admin/checkout/created.html', {'order': order})
+    else:
+        form = PaymentForm()
+    # Resumen
+    subtotal = float(cart.get_total_price())
+    method_code = data.get('shipping_method', 'home')
+    shipping_cost = compute_shipping(subtotal, method_code)
+    total = subtotal + shipping_cost
+    return render(request, 'accounts/admin/checkout/payment.html', {
+        'cart': cart,
+        'form': form,
+        'delivery': data,
+        'shipping_method_name': method_name(method_code),
+        'shipping_cost': shipping_cost,
+        'subtotal': subtotal,
+        'total': total,
+    })
