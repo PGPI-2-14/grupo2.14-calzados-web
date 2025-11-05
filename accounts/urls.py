@@ -28,11 +28,15 @@ urlpatterns = [
     path('admin-lite/orders/', admin_views.order_list, name='admin_orders'),
     path('admin-lite/orders/<int:id>/', admin_views.order_detail, name='admin_order_detail'),
     path('admin-lite/orders/<int:id>/status/', admin_views.order_update_status, name='admin_order_update_status'),
+
+    # API para customers
+    path('api/orders/<int:order_id>/', views.customer_order_detail, name='customer_order_detail'),
 ]
 
 # Endpoints de depuración SOLO disponibles en desarrollo y con MockDB
 if settings.DEBUG and getattr(settings, "USE_MOCKDB", False):
     urlpatterns += [
         path('debug/login-admin/', views.debug_login_admin, name='debug_login_admin'),
+        path('debug/login-customer/', views.debug_login_customer, name='debug_login_customer'),
         path('debug/logout/', views.debug_logout, name='debug_logout'),
     ]
