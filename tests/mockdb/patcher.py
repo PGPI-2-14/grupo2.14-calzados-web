@@ -45,11 +45,35 @@ class MockDB:
         brands = [_to_fake_brand(d) for d in self._data.get('brands', [])]
         brands_by_id = {b.id: b for b in brands}
 
-        products = [_to_fake_product(d, categories_by_id, brands_by_id) for d in self._data.get('products', [])]
+        # Construir productos de forma segura (evitar romper por referencias inválidas)
+        products: List[Any] = []
+        for d in self._data.get('products', []):
+            try:
+                products.append(_to_fake_product(d, categories_by_id, brands_by_id))
+            except KeyError as e:
+                print(f"[mockdb] ⚠️ Producto inválido (category/brand no encontrado): {e} -> {d}")
+            except Exception as e:
+                print(f"[mockdb] ⚠️ Producto inválido: {e} -> {d}")
 
         product_by_id = {p.id: p for p in products}
-        images = [_to_fake_product_image(d, product_by_id) for d in self._data.get('product_images', [])]
-        sizes = [_to_fake_product_size(d, product_by_id) for d in self._data.get('product_sizes', [])]
+        # Imágenes y tallas seguras
+        images: List[Any] = []
+        for d in self._data.get('product_images', []):
+            try:
+                images.append(_to_fake_product_image(d, product_by_id))
+            except KeyError as e:
+                print(f"[mockdb] ⚠️ ProductImage inválido (product no encontrado): {e} -> {d}")
+            except Exception as e:
+                print(f"[mockdb] ⚠️ ProductImage inválido: {e} -> {d}")
+
+        sizes: List[Any] = []
+        for d in self._data.get('product_sizes', []):
+            try:
+                sizes.append(_to_fake_product_size(d, product_by_id))
+            except KeyError as e:
+                print(f"[mockdb] ⚠️ ProductSize inválido (product no encontrado): {e} -> {d}")
+            except Exception as e:
+                print(f"[mockdb] ⚠️ ProductSize inválido: {e} -> {d}")
 
         # Datos de clientes y admins según nueva estructura
         customers_data = self._data.get('customer') or self._data.get('customers') or []
@@ -65,7 +89,7 @@ class MockDB:
             users.extend([_to_fake_user_from_customer(d) for d in customers_data])
             # Asegurar IDs únicos entre admins y clientes (evitar MultipleObjectsReturned en get(id=...))
             # Estrategia: mantener el primer uso de cada id válido y reasignar para None, <=0 o duplicados posteriores.
-            used_ids: set[int] = set()
+            used_ids = set()
             max_id = 0
             # Determinar max_id inicial
             for u in users:
@@ -83,9 +107,23 @@ class MockDB:
                     used_ids.add(uid)
         users_by_id = {u.id: u for u in users} if users else {}
 
-        carts = [_to_fake_cart(d, customers_by_id) for d in self._data.get('carts', [])]
+        carts: List[Any] = []
+        for d in self._data.get('carts', []):
+            try:
+                carts.append(_to_fake_cart(d, customers_by_id))
+            except KeyError as e:
+                print(f"[mockdb] ⚠️ Cart inválido (customer no encontrado): {e} -> {d}")
+            except Exception as e:
+                print(f"[mockdb] ⚠️ Cart inválido: {e} -> {d}")
         carts_by_id = {c.id: c for c in carts}
-        cart_items = [_to_fake_cart_item(d, carts_by_id, product_by_id) for d in self._data.get('cart_items', [])]
+        cart_items: List[Any] = []
+        for d in self._data.get('cart_items', []):
+            try:
+                cart_items.append(_to_fake_cart_item(d, carts_by_id, product_by_id))
+            except KeyError as e:
+                print(f"[mockdb] ⚠️ CartItem inválido (cart/product no encontrado): {e} -> {d}")
+            except Exception as e:
+                print(f"[mockdb] ⚠️ CartItem inválido: {e} -> {d}")
 
         # Construcción de pedidos y líneas
         orders_data = self._data.get('orders', [])
@@ -117,7 +155,14 @@ class MockDB:
 
         order_items: List[Any] = []
         if self._data.get('order_items'):
-            order_items = [_to_fake_order_item(d, orders_by_id, product_by_id) for d in self._data.get('order_items', [])]
+            order_items = []
+            for d in self._data.get('order_items', []):
+                try:
+                    order_items.append(_to_fake_order_item(d, orders_by_id, product_by_id))
+                except KeyError as e:
+                    print(f"[mockdb] ⚠️ OrderItem inválido (order/product no encontrado): {e} -> {d}")
+                except Exception as e:
+                    print(f"[mockdb] ⚠️ OrderItem inválido: {e} -> {d}")
             # Recalcular totales básicos por pedido si no vienen dados
             from decimal import Decimal
             totals: Dict[int, Decimal] = {}
