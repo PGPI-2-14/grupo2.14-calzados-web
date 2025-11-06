@@ -7,7 +7,8 @@ from .forms import CartAddProductForm
 @require_POST
 def cart_add(request, product_id):
     cart = Cart(request)
-    product = get_object_or_404(Product, id=product_id)
+    # Pasar por Product.objects para forzar el uso del FakeManager en MockDB
+    product = get_object_or_404(Product.objects, id=product_id)
     form = CartAddProductForm(request.POST)
     if form.is_valid():
         cd = form.cleaned_data
@@ -16,7 +17,8 @@ def cart_add(request, product_id):
 
 def cart_remove(request, product_id):
     cart = Cart(request)
-    product = get_object_or_404(Product, id=product_id)
+    # Pasar por Product.objects para forzar el uso del FakeManager en MockDB
+    product = get_object_or_404(Product.objects, id=product_id)
     cart.remove(product)
     return redirect('cart:cart_detail')
 
