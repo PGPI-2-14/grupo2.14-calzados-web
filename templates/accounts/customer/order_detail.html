@@ -1,0 +1,52 @@
+{% extends 'shop/base/base.html' %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Pedido {{ order.order_number }} (ID: {{ order.id }})</h1>
+    <span class="badge bg-secondary">{{ order.status }}</span>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <h5>Resumen</h5>
+      <ul class="list-unstyled">
+        <li><strong>Total:</strong> {{ order.total }} €</li>
+        <li><strong>Pagado:</strong> {% if order.paid %}Sí{% else %}No{% endif %}</li>
+        <li><strong>Método de pago:</strong> {{ order.payment_method }}</li>
+        <li><strong>Dirección:</strong> {{ order.shipping_address }}</li>
+      </ul>
+    </div>
+    <div class="col-md-6 text-end">
+      <p><small>Creado: {{ order.created }}</small></p>
+    </div>
+  </div>
+
+  <h5>Artículos</h5>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Talla</th>
+        <th>Cantidad</th>
+        <th>Precio</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td>{{ it.product_name }}</td>
+        <td>{{ it.size }}</td>
+        <td>{{ it.quantity }}</td>
+        <td>{{ it.price }} €</td>
+        <td>{{ it.total }} €</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center">No hay artículos</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a class="btn btn-outline-secondary" href="{% url 'shop:home' %}">Volver</a>
+</div>
+{% endblock %}
