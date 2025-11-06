@@ -1,0 +1,35 @@
+{% extends 'shop/base/base.html' %}
+{% block content %}
+<div class="container py-5">
+  <h1>Panel de administración (mock)</h1>
+  {% if total_orders is not None %}
+  <div class="row my-4">
+    <div class="col-md-3">
+      <div class="card"><div class="card-body"><strong>Pedidos</strong><div class="h4">{{ total_orders }}</div></div></div>
+    </div>
+    <div class="col-md-3">
+      <div class="card"><div class="card-body"><strong>Pagados</strong><div class="h4">{{ paid_orders }}</div></div></div>
+    </div>
+    <div class="col-md-3">
+      <div class="card"><div class="card-body"><strong>Pendientes</strong><div class="h4">{{ pending_orders }}</div></div></div>
+    </div>
+    <div class="col-md-3">
+      <div class="card"><div class="card-body"><strong>Ingresos</strong><div class="h4">{{ revenue }}</div></div></div>
+    </div>
+  </div>
+  <p>
+    <a class="btn btn-primary" href="{% url 'accounts:admin_orders' %}">Ver pedidos</a>
+    <a class="btn btn-outline-secondary ms-2" href="{% url 'accounts:admin_checkout_delivery' %}">Probar checkout (mock)</a>
+  </p>
+  {% endif %}
+  <p>Esta sección está protegida por rol ADMIN (sesión). Aquí se integrarán:
+    <ul>
+      <li>Gestión de catálogo (productos/categorías/marcas)</li>
+      <li>Gestión de clientes</li>
+      <li>Gestión y seguimiento de pedidos</li>
+      <li>Datos de empresa y configuración de envío/pagos</li>
+      <li>Buscador y estadísticas de ventas</li>
+    </ul>
+  </p>
+</div>
+{% endblock %}

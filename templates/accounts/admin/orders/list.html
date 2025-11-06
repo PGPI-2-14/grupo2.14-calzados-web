@@ -1,0 +1,39 @@
+{% extends 'shop/base/base.html' %}
+{% block content %}
+<h2>Pedidos</h2>
+<form method="get" class="mb-3">
+  <label>Estado:</label>
+  <select name="status" onchange="this.form.submit()">
+    <option value="" {% if not selected_status %}selected{% endif %}>Todos</option>
+    {% for s in statuses %}
+      <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+</form>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nº pedido</th>
+      <th>Cliente</th>
+      <th>Estado</th>
+      <th>Total</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for o in orders %}
+    <tr>
+      <td>{{ o.id }}</td>
+      <td>{{ o.order_number }}</td>
+      <td>{% if o.customer %}{{ o.customer.first_name }} {{ o.customer.last_name }}{% else %}-{% endif %}</td>
+      <td>{{ o.status }}</td>
+      <td>{{ o.total }}</td>
+      <td><a href="{% url 'accounts:admin_order_detail' o.id %}">Ver</a></td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6">Sin pedidos</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
