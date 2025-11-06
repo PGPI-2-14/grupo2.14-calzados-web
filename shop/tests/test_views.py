@@ -7,8 +7,15 @@ class TestViews(TestCase):
     def setUp(self):
         self.client = Client()
         self.category = Category.objects.create(name='fastfood', slug='fastfood1',)
-        self.product = Product.objects.create(category=self.category, id=20, name='testproduct', slug='testproduct',
-        description='my test product', image='static/core/img/logo.png', price=30)
+        self.product = Product.objects.create(
+            category=self.category,
+            id=20,
+            name='testproduct',
+             slug='testproduct',
+            description='my test product',
+            image='static/core/img/logo.png',
+            price=30
+        )
 
     def test_product_list_view(self):
         response = self.client.get(reverse('shop:product_list'))

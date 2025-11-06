@@ -3,10 +3,15 @@
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# PROJECT_DIR es la carpeta raíz del repo (padre de 'config')
+PROJECT_DIR = os.path.dirname(BASE_DIR)
 
 SECRET_KEY = '5yo93-8a^%idwkzxz@6gq67p2ml#sraf4=7#pqg+28mv)koo@m'
 
 DEBUG = True
+
+# Flag para indicar que se está usando la base de datos simulada (MockDB)
+USE_MOCKDB = os.environ.get("USE_MOCKDB") in {"1", "true", "True", "YES", "yes", "on", "ON"}
 
 ALLOWED_HOSTS = []
 
@@ -22,6 +27,7 @@ INSTALLED_APPS = [
     #third-party apps
     'crispy_forms',
 
+    'accounts.apps.AccountsConfig',
     'shop.apps.ShopConfig',
     'cart.apps.CartConfig',
     'order.apps.OrderConfig',
@@ -42,7 +48,10 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(PROJECT_DIR, 'templates'),  # habilita la carpeta de plantillas a nivel de proyecto
+            os.path.join(BASE_DIR, 'templates'),     # fallback por si existe config/templates
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -99,14 +108,14 @@ USE_L10N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(PROJECT_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(PROJECT_DIR, 'static'),
 )
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_ROOT = os.path.join(PROJECT_DIR, "media")
 MEDIA_URL = '/media/'
 
 
@@ -116,6 +125,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 CART_SESSION_ID = 'cart'
 
 # --- Modo MockDB: evitar uso de tablas de sesión ---
-if os.environ.get("USE_MOCKDB") == "1":
+if USE_MOCKDB:
     SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
     print("Sesiones almacenadas en cookies (sin usar tablas SQL).")

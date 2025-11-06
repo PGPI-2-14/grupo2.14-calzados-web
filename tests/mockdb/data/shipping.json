@@ -1,0 +1,7 @@
+{
+  "free_shipping_threshold": 50.0,
+  "methods": [
+    { "code": "home",  "name": "Envío a domicilio",   "price": 4.99 },
+    { "code": "store", "name": "Recogida en tienda",  "price": 0.0 }
+  ]
+}
