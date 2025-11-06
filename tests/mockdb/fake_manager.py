@@ -182,6 +182,15 @@ class FakeQuerySet(Iterable):
         filtered = [obj for obj in self._items if _matches(obj, kwargs)]
         return FakeQuerySet(self._model_class, filtered)
 
+    def get(self, **kwargs: Any) -> Any:
+        matches = [obj for obj in self._items if _matches(obj, kwargs)]
+        if not matches:
+            # Levanta la excepción del modelo real para compatibilidad con get_object_or_404
+            raise self._model_class.DoesNotExist()  # type: ignore[attr-defined]
+        if len(matches) > 1:
+            raise self._model_class.MultipleObjectsReturned()  # type: ignore[attr-defined]
+        return matches[0]
+
     def first(self) -> Optional[Any]:  # pragma: no cover
         return self._items[0] if self._items else None
 

@@ -26,7 +26,9 @@ class MockDB:
     """
 
     def __init__(self, data: Optional[Dict[str, List[Dict[str, Any]]]] = None):
-        self._orig_managers: Dict[Any, Any] = {}
+        # Guarda los managers originales para poder restaurar después.
+        # Estructura: { ModelClass: { 'objects': <mgr>, '_default_manager': <mgr> } }
+        self._orig_managers: Dict[Any, Dict[str, Any]] = {}
         self._data = data or load_default_data()
 
     def apply(self) -> None:
@@ -75,138 +77,165 @@ class MockDB:
             except Exception as e:
                 print(f"[mockdb] ⚠️ ProductSize inválido: {e} -> {d}")
 
-        # Datos de clientes y admins según nueva estructura
-        customers_data = self._data.get('customer') or self._data.get('customers') or []
-        admins_data = self._data.get('admin') or []
+        # Parchear primero los modelos de shop para que vistas públicas no toquen la DB
+        try:
+            self._patch_manager(Category, FakeManager(Category, categories))
+            self._patch_manager(Brand, FakeManager(Brand, brands))
+            self._patch_manager(Product, FakeManager(Product, products))
+            self._patch_manager(ProductImage, FakeManager(ProductImage, images))
+            self._patch_manager(ProductSize, FakeManager(ProductSize, sizes))
+            print(f"[mockdb] ✔️ Shop patch: {len(categories)} cats, {len(brands)} brands, {len(products)} products")
+        except Exception as e:
+            print(f"[mockdb] ❌ Error parcheando shop models: {e}")
 
-        customers: List[Any] = [_to_fake_customer(d) for d in customers_data]
-        customers_by_id = {c.id: c for c in customers}
+        # Datos de clientes, carts, orders: no bloquear si hay errores
+        try:
+            customers_data = self._data.get('customer') or self._data.get('customers') or []
+            admins_data = self._data.get('admin') or []
 
-        # Construir cuentas de usuario: admins + clientes
-        users: List[Any] = []
-        if UserAccount:
-            users.extend([_to_fake_user(d) for d in admins_data])
-            users.extend([_to_fake_user_from_customer(d) for d in customers_data])
-            # Asegurar IDs únicos entre admins y clientes (evitar MultipleObjectsReturned en get(id=...))
-            # Estrategia: mantener el primer uso de cada id válido y reasignar para None, <=0 o duplicados posteriores.
-            used_ids = set()
-            max_id = 0
-            # Determinar max_id inicial
-            for u in users:
-                uid = getattr(u, 'id', None)
-                if isinstance(uid, int) and uid > max_id:
-                    max_id = uid
-            # Normalizar
-            for u in users:
-                uid = getattr(u, 'id', None)
-                if not isinstance(uid, int) or uid <= 0 or uid in used_ids:
-                    max_id += 1
-                    setattr(u, 'id', max_id)
-                    used_ids.add(max_id)
-                else:
-                    used_ids.add(uid)
-        users_by_id = {u.id: u for u in users} if users else {}
+            customers: List[Any] = [_to_fake_customer(d) for d in customers_data]
+            customers_by_id = {c.id: c for c in customers}
 
-        carts: List[Any] = []
-        for d in self._data.get('carts', []):
-            try:
-                carts.append(_to_fake_cart(d, customers_by_id))
-            except KeyError as e:
-                print(f"[mockdb] ⚠️ Cart inválido (customer no encontrado): {e} -> {d}")
-            except Exception as e:
-                print(f"[mockdb] ⚠️ Cart inválido: {e} -> {d}")
-        carts_by_id = {c.id: c for c in carts}
-        cart_items: List[Any] = []
-        for d in self._data.get('cart_items', []):
-            try:
-                cart_items.append(_to_fake_cart_item(d, carts_by_id, product_by_id))
-            except KeyError as e:
-                print(f"[mockdb] ⚠️ CartItem inválido (cart/product no encontrado): {e} -> {d}")
-            except Exception as e:
-                print(f"[mockdb] ⚠️ CartItem inválido: {e} -> {d}")
+            # Construir cuentas de usuario: admins + clientes
+            users: List[Any] = []
+            if UserAccount:
+                users.extend([_to_fake_user(d) for d in admins_data])
+                users.extend([_to_fake_user_from_customer(d) for d in customers_data])
+                # Asegurar IDs únicos entre admins y clientes
+                used_ids = set()
+                max_id = 0
+                for u in users:
+                    uid = getattr(u, 'id', None)
+                    if isinstance(uid, int) and uid > max_id:
+                        max_id = uid
+                for u in users:
+                    uid = getattr(u, 'id', None)
+                    if not isinstance(uid, int) or uid <= 0 or uid in used_ids:
+                        max_id += 1
+                        setattr(u, 'id', max_id)
+                        used_ids.add(max_id)
+                    else:
+                        used_ids.add(uid)
+            users_by_id = {u.id: u for u in users} if users else {}
+
+            carts: List[Any] = []
+            for d in self._data.get('carts', []):
+                try:
+                    carts.append(_to_fake_cart(d, customers_by_id))
+                except KeyError as e:
+                    print(f"[mockdb] ⚠️ Cart inválido (customer no encontrado): {e} -> {d}")
+                except Exception as e:
+                    print(f"[mockdb] ⚠️ Cart inválido: {e} -> {d}")
+            carts_by_id = {c.id: c for c in carts}
+            cart_items: List[Any] = []
+            for d in self._data.get('cart_items', []):
+                try:
+                    cart_items.append(_to_fake_cart_item(d, carts_by_id, product_by_id))
+                except KeyError as e:
+                    print(f"[mockdb] ⚠️ CartItem inválido (cart/product no encontrado): {e} -> {d}")
+                except Exception as e:
+                    print(f"[mockdb] ⚠️ CartItem inválido: {e} -> {d}")
 
         # Construcción de pedidos y líneas
-        orders_data = self._data.get('orders', [])
-        orders: List[Any] = []
-        if orders_data:
-            orders = [_to_fake_order(d, customers_by_id) for d in orders_data]
-        else:
-            # Si no hay orders.json, generar un pedido por defecto si hay order_items
+            orders_data = self._data.get('orders', [])
+            orders: List[Any] = []
+            if orders_data:
+                orders = [_to_fake_order(d, customers_by_id) for d in orders_data]
+            else:
+                if self._data.get('order_items'):
+                    from order.models import Order as DjangoOrder
+                    omgr = FakeManager(DjangoOrder, [])
+                    default_customer = customers[0] if customers else None
+                    orders.append(omgr.create(
+                        id=1,
+                        customer=default_customer,
+                        order_number='MOCK-0001',
+                        status='pending',
+                        subtotal='0', taxes='0', shipping_cost='0', discount='0', total='0', paid=False,
+                        first_name=getattr(default_customer, 'first_name', ''),
+                        last_name=getattr(default_customer, 'last_name', ''),
+                        email=getattr(default_customer, 'email', ''),
+                        address=getattr(default_customer, 'address', ''),
+                        postal_code=getattr(default_customer, 'postal_code', ''),
+                        city=getattr(default_customer, 'city', ''),
+                    ))
+
+            orders_by_id = {o.id: o for o in orders}
+
+            order_items: List[Any] = []
             if self._data.get('order_items'):
+                order_items = []
+                for d in self._data.get('order_items', []):
+                    try:
+                        order_items.append(_to_fake_order_item(d, orders_by_id, product_by_id))
+                    except KeyError as e:
+                        print(f"[mockdb] ⚠️ OrderItem inválido (order/product no encontrado): {e} -> {d}")
+                    except Exception as e:
+                        print(f"[mockdb] ⚠️ OrderItem inválido: {e} -> {d}")
+                # Recalcular totales básicos por pedido si no vienen dados
                 from decimal import Decimal
-                from order.models import Order as DjangoOrder
-                omgr = FakeManager(DjangoOrder, [])
-                default_customer = customers[0] if customers else None
-                orders.append(omgr.create(
-                    id=1,
-                    customer=default_customer,
-                    order_number='MOCK-0001',
-                    status='pending',
-                    subtotal='0', taxes='0', shipping_cost='0', discount='0', total='0', paid=False,
-                    first_name=getattr(default_customer, 'first_name', ''),
-                    last_name=getattr(default_customer, 'last_name', ''),
-                    email=getattr(default_customer, 'email', ''),
-                    address=getattr(default_customer, 'address', ''),
-                    postal_code=getattr(default_customer, 'postal_code', ''),
-                    city=getattr(default_customer, 'city', ''),
-                ))
+                totals: Dict[int, Decimal] = {}
+                for it in order_items:
+                    oid = getattr(getattr(it, 'order', None), 'id', None)
+                    if oid is None:
+                        if orders:
+                            it.order = orders[0]
+                            oid = orders[0].id
+                    if oid is None:
+                        continue
+                    totals[oid] = totals.get(oid, Decimal('0')) + (it.price * it.quantity)
+                for o in orders:
+                    if getattr(o, 'total', None) in (None, 0, '0'):
+                        total = totals.get(o.id)
+                        if total is not None:
+                            o.subtotal = total
+                            o.total = total
 
-        orders_by_id = {o.id: o for o in orders}
-
-        order_items: List[Any] = []
-        if self._data.get('order_items'):
-            order_items = []
-            for d in self._data.get('order_items', []):
-                try:
-                    order_items.append(_to_fake_order_item(d, orders_by_id, product_by_id))
-                except KeyError as e:
-                    print(f"[mockdb] ⚠️ OrderItem inválido (order/product no encontrado): {e} -> {d}")
-                except Exception as e:
-                    print(f"[mockdb] ⚠️ OrderItem inválido: {e} -> {d}")
-            # Recalcular totales básicos por pedido si no vienen dados
-            from decimal import Decimal
-            totals: Dict[int, Decimal] = {}
-            for it in order_items:
-                oid = getattr(getattr(it, 'order', None), 'id', None)
-                if oid is None:
-                    # Asignar al primer pedido si existe
-                    if orders:
-                        it.order = orders[0]
-                        oid = orders[0].id
-                if oid is None:
-                    continue
-                totals[oid] = totals.get(oid, Decimal('0')) + (it.price * it.quantity)
-            for o in orders:
-                if getattr(o, 'total', None) in (None, 0, '0'):
-                    total = totals.get(o.id)
-                    if total is not None:
-                        o.subtotal = total
-                        o.total = total
-
-        # Parchear .objects con FakeManager
-        self._patch_manager(Category, FakeManager(Category, categories))
-        self._patch_manager(Brand, FakeManager(Brand, brands))
-        self._patch_manager(Product, FakeManager(Product, products))
-        self._patch_manager(ProductImage, FakeManager(ProductImage, images))
-        self._patch_manager(ProductSize, FakeManager(ProductSize, sizes))
-        self._patch_manager(Customer, FakeManager(Customer, customers))
-        self._patch_manager(Order, FakeManager(Order, orders))
-        self._patch_manager(Cart, FakeManager(Cart, carts))
-        self._patch_manager(CartItem, FakeManager(CartItem, cart_items))
-        self._patch_manager(OrderItem, FakeManager(OrderItem, order_items))
-        if UserAccount:
-            self._patch_manager(UserAccount, FakeManager(UserAccount, users))
+            # Parchear resto de modelos
+            self._patch_manager(Customer, FakeManager(Customer, customers))
+            self._patch_manager(Order, FakeManager(Order, orders))
+            self._patch_manager(Cart, FakeManager(Cart, carts))
+            self._patch_manager(CartItem, FakeManager(CartItem, cart_items))
+            self._patch_manager(OrderItem, FakeManager(OrderItem, order_items))
+            if UserAccount:
+                self._patch_manager(UserAccount, FakeManager(UserAccount, users))
+        except Exception as e:
+            print(f"[mockdb] ⚠️ Se aplicó patch de shop, pero falló parte de datos secundarios: {e}")
 
     def restore(self) -> None:
-        for model_class, original in self._orig_managers.items():
-            setattr(model_class, 'objects', original)
+        for model_class, saved in self._orig_managers.items():
+            for name, original in saved.items():
+                try:
+                    setattr(model_class, name, original)
+                except Exception:
+                    pass
         self._orig_managers.clear()
 
     # --- internals ---
     def _patch_manager(self, model_class: Any, fake_manager: FakeManager) -> None:
         if model_class not in self._orig_managers:
-            self._orig_managers[model_class] = getattr(model_class, 'objects')
-        setattr(model_class, 'objects', fake_manager)
+            self._orig_managers[model_class] = {}
+        bucket = self._orig_managers[model_class]
+        # Guardar y sobrescribir 'objects'
+        if 'objects' not in bucket:
+            try:
+                bucket['objects'] = getattr(model_class, 'objects')
+            except Exception:
+                pass
+        try:
+            setattr(model_class, 'objects', fake_manager)
+        except Exception:
+            pass
+        # Guardar y sobrescribir '_default_manager' (usado por get_object_or_404)
+        if '_default_manager' not in bucket:
+            try:
+                bucket['_default_manager'] = getattr(model_class, '_default_manager')
+            except Exception:
+                pass
+        try:
+            setattr(model_class, '_default_manager', fake_manager)
+        except Exception:
+            pass
 
     def _get_manager(self, model_class: Any) -> FakeManager:
         return getattr(model_class, 'objects')  # type: ignore[return-value]
