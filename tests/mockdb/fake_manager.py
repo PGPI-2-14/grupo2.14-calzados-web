@@ -131,7 +131,6 @@ class FakeCustomer:
     address: str
     city: str
     postal_code: str
-    password: str
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name}"
@@ -343,7 +342,7 @@ def _construct_fake_for_model(model_class: Type[Any], kwargs: Dict[str, Any]) ->
         return FakeCustomer(
             id=kwargs['id'], first_name=kwargs['first_name'], last_name=kwargs['last_name'],
             email=kwargs['email'], phone=kwargs['phone'], address=kwargs['address'],
-            city=kwargs['city'], postal_code=kwargs['postal_code'], password=kwargs['password']
+            city=kwargs['city'], postal_code=kwargs['postal_code']
         )
 
     if model_class.__name__ == 'Cart' and model_class is DjangoCart:

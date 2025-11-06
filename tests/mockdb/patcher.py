@@ -353,7 +353,7 @@ def _to_fake_customer(d: Dict[str, Any]) -> FakeCustomer:
     mgr = FakeManager(Customer, [])
     return mgr.create(
         id=int(d['id']), first_name=d['first_name'], last_name=d['last_name'], email=d['email'], phone=d['phone'],
-        address=d['address'], city=d['city'], postal_code=d['postal_code'], password=d['password']
+        address=d['address'], city=d['city'], postal_code=d['postal_code']
     )
 
 
@@ -445,7 +445,6 @@ def _to_fake_customer_from_user(u: Dict[str, Any]) -> FakeCustomer:
         address=u.get('address', ''),
         city=u.get('city', ''),
         postal_code=u.get('postal_code', ''),
-        password=u.get('password', ''),
     )
 
 

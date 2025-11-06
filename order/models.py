@@ -1,22 +1,16 @@
 from django.db import models
 from shop.models import Product
+from accounts.models import UserAccount
 
 
-class Customer(models.Model):
-    """Cliente del ecommerce."""
-    first_name = models.CharField(max_length=50)  # nombre
-    last_name = models.CharField(max_length=50)   # apellidos
-    email = models.EmailField()
-    phone = models.CharField(max_length=30)
-    created = models.DateTimeField(auto_now_add=True)
-    address = models.CharField(max_length=250)
-    city = models.CharField(max_length=100)
-    postal_code = models.CharField(max_length=20)
-    password = models.CharField(max_length=128)
-    # Preparado para enlazar con el usuario de la app (mock auth o futuro login)
-    user = models.OneToOneField(
-        'accounts.UserAccount', related_name='customer_profile', on_delete=models.SET_NULL, null=True, blank=True
-    )
+class Customer(UserAccount):
+    """Cliente del ecommerce que hereda de UserAccount.
+    Solo define los atributos adicionales que no existen en UserAccount.
+    """
+    phone = models.CharField(max_length=30, default='')
+    address = models.CharField(max_length=250, default='')
+    city = models.CharField(max_length=100, default='')
+    postal_code = models.CharField(max_length=20, default='')
 
     class Meta:
         ordering = ('-created',)
