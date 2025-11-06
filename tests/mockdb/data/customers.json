@@ -9,5 +9,49 @@
     "city": "Madrid",
     "postal_code": "28001",
     "password": "hashedpwd"
+  },
+  {
+    "id": 2,
+    "first_name": "Carlos",
+    "last_name": "García",
+    "email": "carlos.garcia@example.com",
+    "phone": "+34 600 000 002",
+    "address": "Avenida del Sol 12",
+    "city": "Barcelona",
+    "postal_code": "08002",
+    "password": "hashedpwd2"
+  },
+  {
+    "id": 3,
+    "first_name": "María",
+    "last_name": "López",
+    "email": "maria.lopez@example.com",
+    "phone": "+34 600 000 003",
+    "address": "Paseo de la Reforma 45",
+    "city": "Valencia",
+    "postal_code": "46001",
+    "password": "hashedpwd3"
+  },
+  {
+    "id": 4,
+    "first_name": "José",
+    "last_name": "Martínez",
+    "email": "jose.martinez@example.com",
+    "phone": "+34 600 000 004",
+    "address": "Calle de la Palma 7",
+    "city": "Sevilla",
+    "postal_code": "41001",
+    "password": "hashedpwd4"
+  },
+  {
+    "id": 1,
+    "first_name": "Lucía",
+    "last_name": "Fernández",
+    "email": "lucia.fernandez@example.com",
+    "phone": "+34 600 000 005",
+    "address": "Camino Real 3",
+    "city": "Bilbao",
+    "postal_code": "48001",
+    "password": "hashedpwd5"
   }
 ]
