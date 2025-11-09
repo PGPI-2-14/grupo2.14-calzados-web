@@ -2,7 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% block title %}
-Your shopping cart
+Tu Carrito
 {% endblock %}
 {% block content %}
 
@@ -10,8 +10,8 @@ Your shopping cart
 <div class="bg-light py-3">
     <div class="container">
         <div class="row">
-            <div class="col-md-12 mb-0"><a href="index.html">Home</a> <span class="mx-2 mb-0">/</span> <strong
-                    class="text-black">Cart</strong></div>
+            <div class="col-md-12 mb-0"><a href="index.html">Menú Principal</a> <span class="mx-2 mb-0">/</span> <strong
+                    class="text-black">Carrito</strong></div>
         </div>
     </div>
 </div>
@@ -24,12 +24,12 @@ Your shopping cart
                     <table class="table table-bordered">
                         <thead>
                             <tr>
-                                <th class="product-thumbnail">Image</th>
-                                <th class="product-name">Product</th>
-                                <th class="product-price">Price</th>
-                                <th class="product-quantity">Quantity</th>
+                                <th class="product-thumbnail">Imagen</th>
+                                <th class="product-name">Producto</th>
+                                <th class="product-price">Precio</th>
+                                <th class="product-quantity">Cantidad</th>
                                 <th class="product-total">Total</th>
-                                <th class="product-remove">Remove</th>
+                                <th class="product-remove">Eliminar</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,10 +74,10 @@ Your shopping cart
             <div class="col-md-6">
                 <div class="row mb-5">
                     <div class="col-md-6 mb-3 mb-md-0">
-                        <button onclick="window.location='{% url "shop:product_list" %}'" class="btn btn-primary btn-sm btn-block">Continue Shopping</button>
+                        <button onclick="window.location='{% url "shop:product_list" %}'" class="btn btn-primary btn-sm btn-block">Continuar comprando</button>
                     </div>
                     <div class="col-md-6">
-                        <button class="btn btn-outline-primary btn-sm btn-block">Checkout</button>
+                        <button class="btn btn-outline-primary btn-sm btn-block">Ir a caja</button>
                     </div>
                 </div>
             </div>
@@ -86,7 +86,7 @@ Your shopping cart
                     <div class="col-md-7">
                         <div class="row">
                             <div class="col-md-12 text-right border-bottom mb-5">
-                                <h3 class="text-black h4 text-uppercase">Cart Totals</h3>
+                                <h3 class="text-black h4 text-uppercase">Total del carro</h3>
                             </div>
                         </div>
 
@@ -102,7 +102,7 @@ Your shopping cart
                         <div class="row">
                             <div class="col-md-12">
                                 <button class="btn btn-primary btn-lg py-3 btn-block"
-                                    onclick="window.location='{% url "order:order_create" %}'">Proceed To Checkout</button>
+                                    onclick="window.location='{% url "order:order_create" %}'">Proceder al pago</button>
                             </div>
                         </div>
                     </div>
