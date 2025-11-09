@@ -80,21 +80,6 @@ Your shopping cart
                         <button class="btn btn-outline-primary btn-sm btn-block">Checkout</button>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <label class="text-black h4" for="coupon">Coupon</label>
-                        <p>Enter your coupon code if you have one.</p>
-                    </div>
-                    <form action="{% url "coupons:apply" %}" method="post">
-                        {% csrf_token %}
-                        <div class="col-md-8 mb-3 mb-md-0">
-                            {{ coupon_apply_form.code|as_crispy_field }}
-                        </div>
-                        <div class="col-md-4">
-                            <button type="submit" class="btn btn-primary btn-sm">Apply Coupon</button>
-                        </div>
-                    </form>
-                </div>
             </div>
             <div class="col-md-6 pl-5">
                 <div class="row justify-content-end">
@@ -110,7 +95,7 @@ Your shopping cart
                                 <span class="text-black">Total</span>
                             </div>
                             <div class="col-md-6 text-right">
-                                <strong class="text-black">{{ cart.get_total_price_after_discount|floatformat:"2" }}</strong>
+                                <strong class="text-black">{{ cart.get_total_price|floatformat:"2" }}</strong>
                             </div>
                         </div>
 
