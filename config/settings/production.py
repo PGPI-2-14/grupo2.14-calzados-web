@@ -12,7 +12,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',
-    '.herokuapp.com'
+    'grupo2-14-calzados-web.onrender.com',
 ]
 
 # Application definition
