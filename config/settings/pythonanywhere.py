@@ -36,3 +36,7 @@ if needs_fallback:
 # STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # STATIC_URL = '/static/'
 # STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
+
+# Relax manifest requirement to avoid collectstatic failing on missing vendor assets referenced in CSS
+# (e.g., jquery-ui theme images). WhiteNoise will still compress and serve static files.
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
