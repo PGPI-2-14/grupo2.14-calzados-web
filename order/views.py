@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from cart.cart import Cart
 from .models import Order, OrderItem
 from .forms import OrderCreateForm
@@ -40,7 +40,22 @@ def order_create(request):
             for item in cart:
                 OrderItem.objects.create(order=order, product=item['product'], price=item['price'], quantity=item['quantity'])
             cart.clear()
-            return render(request, 'order/created.html', {'order': order})
+            return render(request, 'order/payment.html', {'order': order})
     else:
         form = OrderCreateForm()
     return render(request, 'order/create.html', {'cart': cart, 'form': form})
+
+def payment_process(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    '''
+    if request.method == 'POST':
+        order.paid = True
+        order.save()
+    '''
+    
+    return redirect('order:order_created', order.id)
+#return render(request, 'order/payment.html', {'order': order})
+
+def order_created(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    return render(request, 'order/created.html', {'order': order})
