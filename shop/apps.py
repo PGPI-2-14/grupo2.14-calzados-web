@@ -6,8 +6,8 @@ class ShopConfig(AppConfig):
     name = 'shop'
 
     def ready(self):
-        # Activar mock DB en desarrollo si USE_MOCKDB=1
-        if getattr(settings, 'DEBUG', False) and os.environ.get('USE_MOCKDB') == '1':
+        # Activar MockDB si USE_MOCKDB=1 (independiente de DEBUG) para permitir despliegues sin BD
+        if os.environ.get('USE_MOCKDB') == '1':
             try:
                 from tests.mockdb.patcher import MockDB
                 MockDB().apply()

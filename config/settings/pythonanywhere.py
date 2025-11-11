@@ -40,3 +40,7 @@ if needs_fallback:
 # Relax manifest requirement to avoid collectstatic failing on missing vendor assets referenced in CSS
 # (e.g., jquery-ui theme images). WhiteNoise will still compress and serve static files.
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# When forcing MockDB in production, avoid DB-backed sessions
+if os.environ.get('USE_MOCKDB') == '1':
+    SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
