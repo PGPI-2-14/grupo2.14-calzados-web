@@ -64,3 +64,8 @@ def product_detail(request, id, slug):
 #         context['products'] = get_object_or_404(Product, 
 #         id=id, slug=slug, available=True)
 #         return context
+
+def home(request):
+    all_products = Product.objects.filter(available=True)
+    featured_products = list(all_products)[:8]
+    return render(request, 'shop/home.html', {'products': featured_products})

@@ -761,3 +761,24 @@ a {
   max-width: 100%;
   height: auto;
 }
+
+input[type="text"]::-webkit-outer-spin-button,
+input[type="text"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.list-group-item.active {
+    background-color: transparent;
+    border-color: transparent;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.list-group-item a {
+    color: inherit;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}

@@ -1,90 +1,121 @@
-    <div class="site-blocks-cover" style="background-image: url(images/hero_1.jpg);" data-aos="fade">
-      <div class="container">
-        <div class="row align-items-start align-items-md-center justify-content-end">
-          <div class="col-md-5 text-center text-md-left pt-5 pt-md-0">
-            <h1 class="mb-2">Encuentra tu zapato ideal</h1>
-            <div class="intro-text text-center text-md-left">
-              <p class="mb-4">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus at iaculis quam. Integer accumsan tincidunt fringilla. </p>
-              <p>
-                <a href="#" class="btn btn-sm btn-primary">Compre ahora</a>
-              </p>
+{% extends "shop/base/base.html" %}
+{% load static %}
+{% block title %}Nexo Shoes{% endblock %}
+{% block content %}
+<div class="hero-section position-relative overflow-hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 600px;">
+    <div class="position-absolute w-100 h-100" style="background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>'); opacity: 0.3;"></div>
+    <div class="container position-relative" style="padding: 100px 15px;">
+        <div class="row align-items-center">
+            <div class="col-lg-7 text-white">
+                <div class="d-flex align-items-center mb-4" data-aos="fade-right">
+                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 80px; height: 80px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                        <span class="icon-local_mall" style="font-size: 40px; color: #667eea;"></span>
+                    </div>
+                    <div>
+                        <h1 class="display-3 mb-0 font-weight-bold" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">Nexo Shoes</h1>
+                        <p class="mb-0 h5" style="opacity: 0.95;">Conecta con tu próximo calzado favorito</p>
+                    </div>
+                </div>
+                <p class="lead mb-4" style="font-size: 1.5rem; opacity: 0.95;" data-aos="fade-right" data-aos-delay="100">Descubre nuestros productos</p>
+                <div data-aos="fade-right" data-aos-delay="300">
+                    <a class="btn btn-light btn-lg mr-3 px-4 py-3 shadow" href="{% url 'shop:product_list' %}" style="font-weight: 600;">
+                        <span class="icon-storefront mr-2"></span>Explorar tienda
+                    </a>
+                    <a class="btn btn-outline-light btn-lg px-4 py-3" href="{% url 'shop:product_list' %}" style="font-weight: 600; border-width: 2px;">
+                        <span class="icon-filter_list mr-2"></span>Categorías
+                    </a>
+                </div>
+                <div class="mt-5 d-flex text-center" data-aos="fade-up" data-aos-delay="400">
+                    <div class="mr-4">
+                        <h3 class="display-4 font-weight-bold mb-0">500+</h3>
+                        <small style="opacity: 0.9;">Modelos disponibles</small>
+                    </div>
+                    <div class="mr-4">
+                        <h3 class="display-4 font-weight-bold mb-0">24/7</h3>
+                        <small style="opacity: 0.9;">Atención al cliente</small>
+                    </div>
+                    <div>
+                        <h3 class="display-4 font-weight-bold mb-0">100%</h3>
+                        <small style="opacity: 0.9;">Satisfacción garantizada</small>
+                    </div>
+                </div>
             </div>
-          </div>
+            <div class="col-lg-5 text-center mt-5 mt-lg-0" data-aos="zoom-in" data-aos-delay="200">
+                <div class="position-relative" style="height: 400px;">
+                    <div class="position-absolute w-100 h-100 rounded-circle" style="background: rgba(255,255,255,0.1); filter: blur(40px); transform: scale(0.9);"></div>
+                    <div id="productCarousel" class="carousel slide position-relative" data-ride="carousel" data-interval="3000">
+                        <div class="carousel-inner">
+                            {% for product in products %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                              <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded shadow-lg" style="max-width: 450px; max-height: 400px; object-fit: contain;">
+                              <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-10 rounded px-2 py-1" style="max-width: 200px; margin: 0 auto;">
+                                  <h5 class="mb-1" style="font-size: 0.9rem;">{{ product.name }}</h5>
+                                  <p class="mb-0" style="font-size: 0.85rem;">${{ product.price }}</p>
+                              </div>
+                          </div>
+                            {% endfor %}
+                        </div>
+                        <a class="carousel-control-prev" href="#productCarousel" role="button" data-slide="prev">
+                            <span class="icon-chevron_left text-white" style="font-size: 40px;" aria-hidden="true"></span>
+                        </a>
+                        <a class="carousel-control-next" href="#productCarousel" role="button" data-slide="next">
+                            <span class="icon-chevron_right text-white" style="font-size: 40px;" aria-hidden="true"></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
+</div>
 
-    <div class="site-section site-section-sm site-blocks-1">
-      <div class="container">
+<div class="site-section">
+    <div class="container">
+        <h2 class="h4 mb-4 font-weight-bold">Productos destacados</h2>
         <div class="row">
-          <div class="col-md-6 col-lg-4 d-lg-flex mb-4 mb-lg-0 pl-4" data-aos="fade-up" data-aos-delay="">
-            <div class="icon mr-4 align-self-start">
-              <span class="icon-truck"></span>
-            </div>
-            <div class="text">
-              <h2 class="text-uppercase">Free Shipping</h2>
-              <p>Sin gastos de envío</p>
-            </div>
-          </div>
-          <div class="col-md-6 col-lg-4 d-lg-flex mb-4 mb-lg-0 pl-4" data-aos="fade-up" data-aos-delay="200">
-            <div class="icon mr-4 align-self-start">
-              <span class="icon-help"></span>
-            </div>
-            <div class="text">
-              <h2 class="text-uppercase">Contactenos</h2>
-              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus at iaculis quam. Integer accumsan tincidunt fringilla.</p>
-            </div>
-          </div>
+            {% if products %}
+                {% for product in products %}
+                <div class="col-sm-6 col-lg-3 mb-4" data-aos="fade-up">
+                    <div class="card border-0 shadow-sm h-100 product-card">
+                        <a href="{% url 'shop:product_detail' product.id product.slug %}" class="position-relative overflow-hidden">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top" style="height: 200px; object-fit: cover; transition: transform 0.3s;">
+                            {% else %}
+                                <img src="{% static 'images/product-placeholder.png' %}" alt="Producto" class="card-img-top" style="height: 200px; object-fit: cover;">
+                            {% endif %}
+                        </a>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">
+                                <a href="{% url 'shop:product_detail' product.id product.slug %}" class="text-dark text-decoration-none">{{ product.name }}</a>
+                            </h5>
+                            <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:10 }}</p>
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <strong class="text-primary">${{ product.price }}</strong>
+                                <form action="{% url 'cart:cart_add' product.id %}" method="post" class="d-flex align-items-center" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {this.querySelector('button[type=submit]').innerHTML = '<span class=\'icon-check\'></span>'; setTimeout(() => this.querySelector('button[type=submit]').innerHTML = '<span class=\'icon-shopping_cart\'></span>', 1500);});">
+                                    {% csrf_token %}
+                                    <div class="btn-group btn-group-sm mr-2" role="group">
+                                        <button class="btn btn-outline-secondary py-0 px-2" type="button" onclick="var input = this.parentElement.querySelector('input'); if(input.value > 1) input.value = parseInt(input.value) - 1;">-</button>
+                                        <input type="text" name="quantity" class="form-control form-control-sm text-center border-left-0 border-right-0 py-0" style="width: 40px; -moz-appearance: textfield;" value="1" readonly>
+                                        <button class="btn btn-outline-secondary py-0 px-2" type="button" onclick="var input = this.parentElement.querySelector('input'); if(input.value < 99) input.value = parseInt(input.value) + 1;">+</button>
+                                    </div>
+                                    <input type="hidden" name="override" value="False">
+                                    <button type="submit" class="btn btn-primary btn-sm py-1 px-2" title="Añadir al carrito">
+                                        <span class="icon-shopping_cart"></span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <span class="icon-info mr-2"></span>No hay productos destacados disponibles en este momento.
+                    </div>
+                </div>
+            {% endif %}
         </div>
-      </div>
     </div>
+</div>
 
-    <div class="site-section site-blocks-2">
-      <div class="container">
-        <div class="row">
-          <div class="col-sm-6 col-md-6 col-lg-4 mb-4 mb-lg-0" data-aos="fade" data-aos-delay="">
-            <a class="block-2-item" href="#">
-              <figure class="image">
-                <img src="images/women.jpg" alt="" class="img-fluid">
-              </figure>
-              <div class="text">
-                <span class="text-uppercase">Colecciones</span>
-                <h3>Mujer</h3>
-              </div>
-            </a>
-          </div>
-          <div class="col-sm-6 col-md-6 col-lg-4 mb-5 mb-lg-0" data-aos="fade" data-aos-delay="100">
-            <a class="block-2-item" href="#">
-              <figure class="image">
-                <img src="images/children.jpg" alt="" class="img-fluid">
-              </figure>
-              <div class="text">
-                <span class="text-uppercase">Colecciones</span>
-                <h3>Infantil</h3>
-              </div>
-            </a>
-          </div>
-          <div class="col-sm-6 col-md-6 col-lg-4 mb-5 mb-lg-0" data-aos="fade" data-aos-delay="200">
-            <a class="block-2-item" href="#">
-              <figure class="image">
-                <img src="images/men.jpg" alt="" class="img-fluid">
-              </figure>
-              <div class="text">
-                <span class="text-uppercase">Colecciones</span>
-                <h3>Caballero</h3>
-              </div>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="site-section block-3 site-blocks-2 bg-light">
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-md-7 site-section-heading text-center pt-4">
-            <h2>Productos destacados</h2>
-          </div>
-        </div>
-      </div>
-    </div>
+{% endblock %}
