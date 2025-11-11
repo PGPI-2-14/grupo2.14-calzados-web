@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "email": "admin@tienda.local",
+    "password_hash": "",
+    "role": "admin",
+    "first_name": "Admin",
+    "last_name": "Tienda",
+    "is_active": true
+  }
+]

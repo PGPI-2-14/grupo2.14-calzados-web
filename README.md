@@ -12,7 +12,5 @@ venv\Scripts\activate
 ```
 **3.Migrar y arrancar servidor**
 ```sh
-python manage.py makemigrations
-python manage.py migrate
-python manage.py runserver
+./run_mockdb.ps1
 ```

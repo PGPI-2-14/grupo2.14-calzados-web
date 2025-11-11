@@ -1,12 +1,12 @@
 {% extends "shop/base/base.html" %}
 {% load static %}
 {% load crispy_forms_tags %}
+
 {% block title %}
 Tu Carrito
 {% endblock %}
+
 {% block content %}
-
-
 <div class="bg-light py-3">
     <div class="container">
         <div class="row">
@@ -14,6 +14,7 @@ Tu Carrito
                     class="text-black">Carrito</strong></div>
         </div>
     </div>
+  </div>
 </div>
 
 <div class="site-section">
@@ -63,12 +64,20 @@ Tu Carrito
                             {% endwith %}
                             {% endfor %}
                             </tr>
-
-                        </tbody>
-                    </table>
-                </div>
-            </form>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="row mb-5">
+          <div class="col-md-6 mb-3 mb-md-0">
+            <button onclick='window.location="{% url "shop:product_list" %}"'
+                    class="btn btn-primary btn-sm btn-block">
+              Continue Shopping
+            </button>
+          </div>
+          <div class="col-md-6">
+            <button class="btn btn-outline-primary btn-sm btn-block">Checkout</button>
+          </div>
         </div>
+      </div>
 
         <div class="row">
             <div class="col-md-6">
@@ -108,7 +117,10 @@ Tu Carrito
                     </div>
                 </div>
             </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
