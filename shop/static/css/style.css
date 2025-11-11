@@ -751,3 +751,13 @@ a {
   width: 120px;
   border-radius: 50%;
   margin-bottom: 20px; }
+
+
+.logo-container {
+  text-align: center;
+}
+
+.img-fluid.rounded.mb-4 {
+  max-width: 100%;
+  height: auto;
+}
