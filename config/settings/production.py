@@ -4,7 +4,7 @@ import dotenv
 import os
 import dj_database_url
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 SECRET_KEY = '5yo93-8a^%idwkzxz@6gq67p2ml#sraf4=7#pqg+28mv)koo@m'
 
@@ -12,7 +12,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',
-    '.herokuapp.com'
+    'grupo2-14-calzados-web.onrender.com',
 ]
 
 # Application definition
