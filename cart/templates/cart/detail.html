@@ -54,12 +54,7 @@ Tu Carrito
                                                 {% csrf_token %}
                                                 <div class="input-group" style="max-width: 130px; margin: 0 auto;">
                                                     {{ item.update_quantity_form.quantity }}
-                                                    {{ item.update_quantity_form.override }}
-                                                    <div class="input-group-append">
-                                                        <button class="btn btn-sm btn-outline-success" type="submit" title="Actualizar cantidad">
-                                                            <span class="icon-system_update"></span>
-                                                        </button>
-                                                    </div>
+                                                    {{ item.update_quantity_form.update }}
                                                 </div>
                                             </form>
                                         </td>
@@ -104,4 +99,13 @@ Tu Carrito
         </div>
     </div>
 </div>
+<script>
+// Auto-actualizar cantidad al cambiar el desplegable (una sola vez)
+document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === 'quantity') {
+        const form = e.target.closest('form');
+        if (form) form.submit();
+    }
+});
+</script>
 {% endblock %}

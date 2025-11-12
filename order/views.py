@@ -3,6 +3,17 @@ from cart.cart import Cart
 from .models import Order, OrderItem
 from .forms import OrderCreateForm
 from .shipping import compute_shipping
+try:
+    # Persistencia MockDB
+    from tests.mockdb.patcher import save_orders_to_fixture, save_order_items_to_fixture, save_products_to_fixture
+except Exception:
+    # En entorno sin MockDB disponible, no persistimos
+    def save_orders_to_fixture():
+        pass
+    def save_order_items_to_fixture():
+        pass
+    def save_products_to_fixture():
+        pass
 
 def _generate_order_number(next_id: int) -> str:
     return f"MOCK-{next_id:04d}"
@@ -17,10 +28,29 @@ def order_create(request):
             subtotal = float(cart.get_total_price())
             shipping_cost = compute_shipping(subtotal, 'home')
             total = subtotal + shipping_cost
+            # Si el usuario está logueado como customer, asociar el pedido al Customer
+            customer_obj = None
+            try:
+                from accounts.utils import SESSION_USER_ROLE, SESSION_USER_ID
+                role = request.session.get(SESSION_USER_ROLE)
+                user_id = request.session.get(SESSION_USER_ID)
+                if str(role) == 'customer' and user_id:
+                    try:
+                        from .models import Customer as OrderCustomer
+                        customer_obj = OrderCustomer.objects.get(id=int(user_id))
+                    except Exception:
+                        # Fallback: intentar por email del formulario
+                        try:
+                            customer_obj = OrderCustomer.objects.filter(email=cd.get('email', '')).first()
+                        except Exception:
+                            customer_obj = None
+            except Exception:
+                customer_obj = None
             # Crear pedido vía MockDB
             next_id = getattr(Order.objects, '_next_id', 1)
             order = Order.objects.create(
                 id=next_id,
+                customer=customer_obj,
                 first_name=cd['first_name'],
                 last_name=cd['last_name'],
                 email=cd['email'],
@@ -32,6 +62,8 @@ def order_create(request):
                 subtotal=str(subtotal),
                 shipping_cost=str(shipping_cost),
                 shipping_method='home',
+                # Guardar dirección de envío explícita cuando es envío a domicilio
+                shipping_address=cd['address'],
                 taxes='0',
                 discount='0',
                 total=str(total),
@@ -39,23 +71,92 @@ def order_create(request):
             )
             for item in cart:
                 OrderItem.objects.create(order=order, product=item['product'], price=item['price'], quantity=item['quantity'])
+                # Decrementar stock del producto
+                try:
+                    prod = item['product']
+                    qty = int(item['quantity'])
+                    if hasattr(prod, 'stock'):
+                        prod.stock = max(0, int(getattr(prod, 'stock', 0)) - qty)
+                except Exception:
+                    pass
+            # Persistir inmediatamente el pedido y sus líneas en JSON (MockDB)
+            try:
+                save_orders_to_fixture()
+                save_order_items_to_fixture()
+                save_products_to_fixture()
+            except Exception:
+                pass
             cart.clear()
             return render(request, 'order/payment.html', {'order': order})
     else:
         form = OrderCreateForm()
-    return render(request, 'order/create.html', {'cart': cart, 'form': form})
+    # También calcular resumen con envío para la vista GET
+    subtotal = float(cart.get_total_price())
+    shipping_cost = compute_shipping(subtotal, 'home')
+    total = subtotal + shipping_cost
+    return render(request, 'order/create.html', {
+        'cart': cart,
+        'form': form,
+        'shipping_cost': shipping_cost,
+        'subtotal': subtotal,
+        'total': total,
+    })
 
 def payment_process(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
-    '''
+    # Forzar manager mock: evita tocar ORM real si MockDB no parcheó _default_manager
+    order = get_object_or_404(Order.objects, id=order_id)
+    # Simular confirmación de pago: marcar según método y persistir
     if request.method == 'POST':
-        order.paid = True
-        order.save()
-    '''
-    
+        method = request.POST.get('payment_method', '').strip() or 'card'
+        try:
+            order.payment_method = method
+        except Exception:
+            pass
+        if method == 'card':
+            order.paid = True
+            try:
+                order.status = 'paid'
+            except Exception:
+                pass
+        elif method in ('contrareembolso', 'cod', 'cash_on_delivery'):
+            order.paid = False
+            try:
+                # Aceptado pero pendiente de cobro
+                order.status = 'processing'
+            except Exception:
+                pass
+        try:
+            save_orders_to_fixture()
+        except Exception:
+            pass
     return redirect('order:order_created', order.id)
 #return render(request, 'order/payment.html', {'order': order})
 
 def order_created(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    # Forzar manager mock: evita tocar ORM real si MockDB no parcheó _default_manager
+    order = get_object_or_404(Order.objects, id=order_id)
+    # Si venimos de la pasarela con GET (flujo temporal), actualizar paid según método
+    method = (request.GET.get('payment_method') or '').strip()
+    if method:
+        try:
+            order.payment_method = method
+        except Exception:
+            pass
+        paid_before = getattr(order, 'paid', False)
+        if method == 'card' and not paid_before:
+            order.paid = True
+            try:
+                order.status = 'paid'
+            except Exception:
+                pass
+        elif method in ('contrareembolso', 'cod', 'cash_on_delivery'):
+            order.paid = False
+            try:
+                order.status = 'processing'
+            except Exception:
+                pass
+        try:
+            save_orders_to_fixture()
+        except Exception:
+            pass
     return render(request, 'order/created.html', {'order': order})

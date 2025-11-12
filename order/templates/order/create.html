@@ -67,11 +67,11 @@ Checkout
                             </div>
                             <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
                                 <span class="text-muted">Envío</span>
-                                <span>Gratis</span>
+                                <span>${{ shipping_cost|floatformat:"2" }}</span>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <strong class="h5 mb-0">Total</strong>
-                                <strong class="h5 mb-0">${{ cart.get_total_price|floatformat:"2" }}</strong>
+                                <strong class="h5 mb-0">${{ total|floatformat:"2" }}</strong>
                             </div>
                         </div>
                     </div>

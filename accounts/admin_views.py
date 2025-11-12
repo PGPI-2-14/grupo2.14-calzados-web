@@ -13,6 +13,24 @@ from order.models import Order, OrderItem
 from cart.cart import Cart
 from order.shipping import compute_shipping, method_name
 
+# Persistencia MockDB
+try:
+    from tests.mockdb.patcher import (
+        save_products_to_fixture,
+        save_orders_to_fixture,
+        save_order_items_to_fixture,
+        save_user_accounts_to_fixture,
+    )
+except Exception:
+    def save_products_to_fixture():
+        pass
+    def save_orders_to_fixture():
+        pass
+    def save_order_items_to_fixture():
+        pass
+    def save_user_accounts_to_fixture():
+        pass
+
 
 @require_admin
 def product_list(request: HttpRequest) -> HttpResponse:
@@ -41,6 +59,11 @@ def product_create(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             kwargs = form.to_kwargs()
             Product.objects.create(**kwargs)
+            # Persistir productos
+            try:
+                save_products_to_fixture()
+            except Exception:
+                pass
             return redirect(reverse('accounts:admin_products'))
     else:
         form = ProductForm()
@@ -75,6 +98,11 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
             # Imagen: asegurar .url
             image_url = cd.get('image_url', '')
             product.image = SimpleNamespace(url=image_url)
+            # Persistir cambios de producto
+            try:
+                save_products_to_fixture()
+            except Exception:
+                pass
             return redirect(reverse('accounts:admin_products'))
     else:
         # Inicializar formulario con datos del producto
@@ -105,6 +133,10 @@ def product_delete(request: HttpRequest, id: int) -> HttpResponse:
         # Eliminar del FakeManager: reescribir la lista sin el producto
         remaining = [p for p in Product.objects.all() if getattr(p, 'id', None) != id]
         Product.objects.bulk_set(remaining)
+        try:
+            save_products_to_fixture()
+        except Exception:
+            pass
         return redirect(reverse('accounts:admin_products'))
     # Mostrar confirmación
     product = Product.objects.get(id=id)
@@ -126,6 +158,10 @@ def customer_create(request: HttpRequest) -> HttpResponse:
             kwargs = form.to_kwargs()
             # password_hash no lo solicitamos en admin-lite; dejar vacío
             UserAccount.objects.create(**kwargs)
+            try:
+                save_user_accounts_to_fixture()
+            except Exception:
+                pass
             return redirect(reverse('accounts:admin_customers'))
     else:
         form = CustomerForm()
@@ -150,6 +186,10 @@ def customer_edit(request: HttpRequest, id: int) -> HttpResponse:
                 customer.save()
             except Exception:
                 # En el escenario MockDB, puede que no exista save()
+                pass
+            try:
+                save_user_accounts_to_fixture()
+            except Exception:
                 pass
             return redirect(reverse('accounts:admin_customers'))
     else:
@@ -178,6 +218,10 @@ def customer_delete(request: HttpRequest, id: int) -> HttpResponse:
                 UserAccount.objects.bulk_set(remaining)
             except Exception:
                 pass
+        try:
+            save_user_accounts_to_fixture()
+        except Exception:
+            pass
         return redirect(reverse('accounts:admin_customers'))
     customer = UserAccount.objects.get(id=id, role=UserAccount.ROLE_CUSTOMER)
     return render(request, 'accounts/admin/customers/confirm_delete.html', {'customer': customer})
@@ -251,6 +295,10 @@ def order_update_status(request: HttpRequest, id: int) -> HttpResponse:
     order.status = new_status
     if paid_flag is not None:
         order.paid = bool(paid_flag)
+    try:
+        save_orders_to_fixture()
+    except Exception:
+        pass
     return redirect(reverse('accounts:admin_order_detail', args=[id]))
 
 
@@ -320,6 +368,20 @@ def checkout_payment(request: HttpRequest) -> HttpResponse:
             )
             for item in cart:
                 OrderItem.objects.create(order=order, product=item['product'], price=item['price'], quantity=item['quantity'])
+                # Decrementar stock del producto y persistir
+                try:
+                    prod = item['product']
+                    qty = int(item['quantity'])
+                    if hasattr(prod, 'stock'):
+                        prod.stock = max(0, int(getattr(prod, 'stock', 0)) - qty)
+                except Exception:
+                    pass
+            try:
+                save_orders_to_fixture()
+                save_order_items_to_fixture()
+                save_products_to_fixture()
+            except Exception:
+                pass
             cart.clear()
             request.session.pop(ADMIN_CHECKOUT_KEY, None)
             return render(request, 'accounts/admin/checkout/created.html', {'order': order})

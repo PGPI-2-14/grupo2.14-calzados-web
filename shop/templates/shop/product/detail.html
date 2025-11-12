@@ -27,7 +27,7 @@
               <form action="{% url "cart:cart_add" product.id %}" method="post">
                 {% csrf_token %}
                 {{ cart_product_form|crispy }}
-                <input type="submit" class="buy-now btn btn-sm btn-primary" value="Add to cart">
+                <input type="submit" class="buy-now btn btn-sm btn-primary" value="Añadir al carrito">
               </form>
             </div>
             </div>

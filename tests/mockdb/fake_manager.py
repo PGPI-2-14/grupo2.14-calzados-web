@@ -120,6 +120,23 @@ class FakeOrder:
         # Puede ser calculado desde OrderItem externamente si no hay total
         return self.total
 
+    @property
+    def items(self):
+        """Emula la relación inversa related_name='items' de OrderItem.
+        Permite usar order.items.all en plantillas.
+        """
+        order_self = self
+
+        class _Rel:
+            def __init__(self, order):
+                self._order = order
+
+            def all(self):
+                from order.models import OrderItem as DjangoOrderItem
+                return DjangoOrderItem.objects.filter(order=self._order)
+
+        return _Rel(order_self)
+
 
 @dataclass
 class FakeCustomer:
