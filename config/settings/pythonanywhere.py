@@ -44,3 +44,4 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # When forcing MockDB in production, avoid DB-backed sessions
 if os.environ.get('USE_MOCKDB') == '1':
     SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+    # No se configura SMTP en este entorno; el envío real de correos queda deshabilitado.

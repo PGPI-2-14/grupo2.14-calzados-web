@@ -1,8 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from django.urls import reverse
 from cart.cart import Cart
 from .models import Order, OrderItem
 from .forms import OrderCreateForm
 from .shipping import compute_shipping
+from .utils import send_order_confirmation
 try:
     # Persistencia MockDB
     from tests.mockdb.patcher import save_orders_to_fixture, save_order_items_to_fixture, save_products_to_fixture
@@ -86,6 +90,11 @@ def order_create(request):
                 save_products_to_fixture()
             except Exception:
                 pass
+            # Enviar email de confirmación (no bloqueante si falla)
+            try:
+                send_order_confirmation(order)
+            except Exception:
+                pass
             cart.clear()
             return render(request, 'order/payment.html', {'order': order})
     else:
@@ -129,7 +138,8 @@ def payment_process(request, order_id):
             save_orders_to_fixture()
         except Exception:
             pass
-    return redirect('order:order_created', order.id)
+    # Redirigir con flag para descargar simulación del email
+    return redirect(f"{reverse('order:order_created', args=[order.id])}?download=1")
 #return render(request, 'order/payment.html', {'order': order})
 
 def order_created(request, order_id):
@@ -159,4 +169,19 @@ def order_created(request, order_id):
             save_orders_to_fixture()
         except Exception:
             pass
-    return render(request, 'order/created.html', {'order': order})
+    download_flag = (request.GET.get('download') == '1')
+    return render(request, 'order/created.html', {'order': order, 'download': '1' if download_flag else ''})
+
+def order_email_download(request, order_id):
+    # Genera un archivo descargable con el contenido del email de confirmación
+    order = get_object_or_404(Order.objects, id=order_id)
+    items = list(OrderItem.objects.filter(order=order))
+    ctx = {'order': order, 'items': items}
+    subject = f"Confirmación de pedido {getattr(order, 'order_number', order.id)}"
+    body = render_to_string('order/emails/confirmation.txt', ctx)
+    # Añadir cabeceras sencillas
+    content = f"To: {getattr(order, 'email', '')}\nSubject: {subject}\n\n{body}"
+    filename = f"pedido-{getattr(order, 'order_number', order.id)}.txt"
+    resp = HttpResponse(content, content_type='text/plain; charset=utf-8')
+    resp['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return resp

@@ -79,6 +79,9 @@ Thank you
                             </div>
                         </div>
                         <div class="mt-4">
+                                                        <a id="email-download-link" href="{% url 'order:email_download' order.id %}" download class="btn btn-outline-secondary btn-block mb-2">
+                                                                Descargar copia del email
+                                                        </a>
                             <button onclick="window.location='{% url 'shop:product_list' %}'" class="btn btn-primary btn-block">
                                 Continuar comprando
                             </button>
@@ -89,4 +92,17 @@ Thank you
         </div>
     </div>
 </div>
+{% if download %}
+<script>
+// Auto-dispara la descarga del email simulado al cargar la página
+window.addEventListener('DOMContentLoaded', function() {
+    try {
+        var link = document.getElementById('email-download-link');
+        if (link) {
+            link.click();
+        }
+    } catch (e) {}
+});
+</script>
+{% endif %}
 {% endblock %}

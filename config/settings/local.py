@@ -128,3 +128,7 @@ CART_SESSION_ID = 'cart'
 if USE_MOCKDB:
     SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
     print("Sesiones almacenadas en cookies (sin usar tablas SQL).")
+
+# Email (desarrollo): enviar a consola para pruebas
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'no-reply@example.com'

@@ -1,0 +1,19 @@
+Hola {{ order.first_name }} {{ order.last_name }},
+
+¡Gracias por tu compra! Hemos recibido tu pedido {{ order.order_number }}.
+
+Resumen del pedido:
+{% for it in items %}
+- {{ it.product.name }} x{{ it.quantity }} — {{ it.price }} € (subtotal {{ it.price|floatformat:2|add:""|safe }} x {{ it.quantity }})
+{% endfor %}
+
+Subtotal: {{ order.subtotal }} €
+Gastos de envío: {{ order.shipping_cost }} €
+Total: {{ order.total }} €
+
+Entrega:
+- Método: {{ order.shipping_method|default:"home" }}
+- Dirección: {{ order.shipping_address|default:order.address }} {{ order.postal_code }} {{ order.city }}
+
+Un saludo,
+Nexo Shoes
