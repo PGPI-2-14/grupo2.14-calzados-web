@@ -24,56 +24,91 @@
         <div class="row">
           <div class="col-md-6 mb-4">
             <div class="card border-0 shadow-sm">
-              <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
+              {% if product.images.exists %}
+                {% with primary_image=product.images.filter.is_primary|first %}
+                  {% if primary_image %}
+                    <img src="{{ primary_image.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
+                  {% else %}
+                    <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
+                  {% endif %}
+                {% endwith %}
+              {% elif product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
+              {% else %}
+                <img src="{% static 'img/placeholder-product.jpg' %}" alt="No image available" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
+              {% endif %}
             </div>
           </div>
           
           <div class="col-md-6">
             <h2 class="text-black mb-3">{{ product.name }}</h2>
-            <div class="mb-4">
-              <span class="badge badge-secondary">En stock</span>
-            </div>
-            <p class="text-muted mb-4">{{ product.description|linebreaks }}</p>
-            <h3 class="text-primary mb-4">${{ product.price }}</h3>
             
-            <form action="{% url "cart:cart_add" product.id %}" method="post" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {var btn = this.querySelector('button[type=submit]'); btn.innerHTML = '<span class=\'icon-check mr-2\'></span>Añadido al carrito'; btn.classList.remove('btn-primary'); btn.classList.add('btn-success'); setTimeout(() => {btn.innerHTML = '<span class=\'icon-shopping_cart mr-2\'></span>Añadir al carrito'; btn.classList.remove('btn-success'); btn.classList.add('btn-primary');}, 2000);});">
+            {% if product.brand %}
+            <div class="mb-2">
+              <span class="text-muted">Marca: </span>
+              <strong>{{ product.brand.name }}</strong>
+            </div>
+            {% endif %}
+            
+            <div class="mb-4">
+              <span id="stock-badge" class="badge {% if product.available and product.stock > 0 %}badge-success{% else %}badge-danger{% endif %}">
+                {% if sizes %}Seleccione talla{% else %}{% if product.available and product.stock > 0 %}En stock ({{ product.stock }}){% else %}Agotado{% endif %}{% endif %}
+              </span>
+            </div>
+
+            <div class="mb-4">
+              {% if product.offer_price and product.offer_price < product.price %}
+                <h3 class="text-primary mb-1">${{ product.offer_price }}</h3>
+                <h5 class="text-muted text-decoration-line-through mb-0">${{ product.price }}</h5>
+                <span class="badge badge-warning">Oferta</span>
+              {% else %}
+                <h3 class="text-primary mb-0">${{ product.price }}</h3>
+              {% endif %}
+            </div>
+            
+            <div class="mb-4">
+              <p class="text-muted mb-3">{{ product.description|linebreaks }}</p>
+              {% if product.gender and product.gender != 'unisex' %}
+                <p class="mb-1"><strong>Género:</strong> {{ product.gender|title }}</p>
+              {% endif %}
+              {% if product.color %}
+                <p class="mb-1"><strong>Color:</strong> {{ product.color }}</p>
+              {% endif %}
+              {% if product.material %}
+                <p class="mb-1"><strong>Material:</strong> {{ product.material }}</p>
+              {% endif %}
+            </div>
+            
+            <form action="{% url 'cart:cart_add' product.id %}" method="post" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {var btn = this.querySelector('button[type=submit]'); btn.innerHTML = '<span class=\'icon-check mr-2\'></span>Añadido al carrito'; btn.classList.remove('btn-primary'); btn.classList.add('btn-success'); setTimeout(() => {btn.innerHTML = '<span class=\'icon-shopping_cart mr-2\'></span>Añadir al carrito'; btn.classList.remove('btn-success'); btn.classList.add('btn-primary');}, 2000);});">
               {% csrf_token %}
               
               <div class="mb-4">
                 <label class="font-weight-bold mb-3">Selecciona tu talla (EU):</label>
                 <div class="size-selector">
-                  <input type="radio" id="size35" name="size" value="35" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size35" class="size-label">35</label>
-                  
-                  <input type="radio" id="size36" name="size" value="36" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size36" class="size-label">36</label>
-                  
-                  <input type="radio" id="size37" name="size" value="37" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size37" class="size-label">37</label>
-                  
-                  <input type="radio" id="size38" name="size" value="38" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size38" class="size-label">38</label>
-                  
-                  <input type="radio" id="size39" name="size" value="39" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size39" class="size-label">39</label>
-                  
-                  <input type="radio" id="size40" name="size" value="40" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size40" class="size-label">40</label>
-                  
-                  <input type="radio" id="size41" name="size" value="41" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size41" class="size-label">41</label>
-                  
-                  <input type="radio" id="size42" name="size" value="42" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size42" class="size-label">42</label>
-                  
-                  <input type="radio" id="size43" name="size" value="43" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size43" class="size-label">43</label>
-                  
-                  <input type="radio" id="size44" name="size" value="44" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size44" class="size-label">44</label>
-                  
-                  <input type="radio" id="size45" name="size" value="45" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
-                  <label for="size45" class="size-label">45</label>
+                  {% for size in sizes %}
+                    {% if size.stock > 0 %}
+                      <input type="radio"
+                             id="size{{ forloop.counter }}"
+                             name="size"
+                             value="{{ size.size }}"
+                             data-stock="{{ size.stock }}"
+                             class="d-none size-input"
+                             onchange="onSizeSelected(this)"
+                             required>
+                      <label for="size{{ forloop.counter }}" class="size-label">{{ size.size }} <small class="text-muted">({{ size.stock }})</small></label>
+                    {% else %}
+                      <input type="radio"
+                             id="size{{ forloop.counter }}"
+                             name="size"
+                             value="{{ size.size }}"
+                             data-stock="0"
+                             class="d-none size-input"
+                             disabled>
+                      <label for="size{{ forloop.counter }}" class="size-label disabled" style="opacity: 0.5; cursor: not-allowed;">{{ size.size }} <small class="text-muted">(0)</small></label>
+                    {% endif %}
+                  {% empty %}
+                    <p class="text-muted">No hay tallas disponibles</p>
+                  {% endfor %}
                 </div>
               </div>
               
@@ -90,9 +125,15 @@
               
               <input type="hidden" name="override" value="False">
               
-              <button type="submit" class="btn btn-primary btn-lg btn-block mb-3">
-                <span class="icon-shopping_cart mr-2"></span>Añadir al carrito
-              </button>
+              {% if product.available and product.stock > 0 %}
+                <button id="add-to-cart-btn" type="submit" class="btn btn-primary btn-lg btn-block mb-3" {% if sizes %}disabled{% endif %}>
+                  <span class="icon-shopping_cart mr-2"></span>Añadir al carrito
+                </button>
+              {% else %}
+                <button type="button" class="btn btn-secondary btn-lg btn-block mb-3" disabled>
+                  <span class="icon-remove_shopping_cart mr-2"></span>Producto no disponible
+                </button>
+              {% endif %}
               
               <a href="{% url 'shop:product_list' %}" class="btn btn-outline-secondary btn-block">
                 <span class="icon-arrow_back mr-2"></span>Volver a la tienda
@@ -111,4 +152,36 @@
       </div>
     </div>
 
+<script>
+  // enable/disable add button and show stock per selected size
+  function onSizeSelected(radio) {
+    var stock = parseInt(radio.dataset.stock || '0', 10);
+    var badge = document.getElementById('stock-badge');
+    var addBtn = document.getElementById('add-to-cart-btn');
+    var qtyInput = document.querySelector('input[name=quantity]');
+
+    if (stock > 0) {
+      badge.classList.remove('badge-danger');
+      badge.classList.add('badge-success');
+      badge.textContent = 'En stock (' + stock + ')';
+      if (addBtn) addBtn.disabled = false;
+      if (qtyInput) { qtyInput.value = 1; qtyInput.max = stock; }
+    } else {
+      badge.classList.remove('badge-success');
+      badge.classList.add('badge-danger');
+      badge.textContent = 'Agotado';
+      if (addBtn) addBtn.disabled = true;
+      if (qtyInput) { qtyInput.value = 0; qtyInput.max = 0; }
+    }
+  }
+
+  // set initial quantity max for products without sizes
+  document.addEventListener('DOMContentLoaded', function () {
+    var hasSizes = {{ sizes|length }} > 0;
+    if (!hasSizes) {
+      var qtyInput = document.querySelector('input[name=quantity]');
+      if (qtyInput) qtyInput.max = {{ product.stock }};
+    }
+  });
+</script>
 {% endblock %}
