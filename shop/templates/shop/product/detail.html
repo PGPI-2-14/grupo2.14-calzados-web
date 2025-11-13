@@ -8,41 +8,107 @@
     <div class="bg-light py-3">
       <div class="container">
         <div class="row">
-          <div class="col-md-12 mb-0"><a href="index.html">Menú Principal</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">{{ product.name }}</strong></div>
+          <div class="col-md-12 mb-0">
+            <a href="{% url 'shop:product_list' %}">Menú Principal</a> 
+            <span class="mx-2 mb-0">/</span> 
+            <a href="{% url 'shop:product_list' %}">Tienda</a>
+            <span class="mx-2 mb-0">/</span> 
+            <strong class="text-black">{{ product.name }}</strong>
+          </div>
         </div>
       </div>
     </div>  
-
+    
     <div class="site-section">
       <div class="container">
         <div class="row">
-          <div class="col-md-6">
-            <img src="{{ product.image.url }}" alt="Image" class="img-fluid">
-          </div>
-          <div class="col-md-6">
-            <h2 class="text-black mr-2">{{ product.name }}</h2>
-            <p>{{ product.description|linebreaks }}</p>
-            <p><strong class="text-primary h4">${{ product.price }}</strong></p>
-            <div class="mt-5 col-md-5">
-              <form action="{% url "cart:cart_add" product.id %}" method="post">
-                {% csrf_token %}
-                {{ cart_product_form|crispy }}
-                <input type="submit" class="buy-now btn btn-sm btn-primary" value="Add to cart">
-              </form>
+          <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+              <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
             </div>
+          </div>
+          
+          <div class="col-md-6">
+            <h2 class="text-black mb-3">{{ product.name }}</h2>
+            <div class="mb-4">
+              <span class="badge badge-secondary">En stock</span>
+            </div>
+            <p class="text-muted mb-4">{{ product.description|linebreaks }}</p>
+            <h3 class="text-primary mb-4">${{ product.price }}</h3>
+            
+            <form action="{% url "cart:cart_add" product.id %}" method="post" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {var btn = this.querySelector('button[type=submit]'); btn.innerHTML = '<span class=\'icon-check mr-2\'></span>Añadido al carrito'; btn.classList.remove('btn-primary'); btn.classList.add('btn-success'); setTimeout(() => {btn.innerHTML = '<span class=\'icon-shopping_cart mr-2\'></span>Añadir al carrito'; btn.classList.remove('btn-success'); btn.classList.add('btn-primary');}, 2000);});">
+              {% csrf_token %}
+              
+              <div class="mb-4">
+                <label class="font-weight-bold mb-3">Selecciona tu talla (EU):</label>
+                <div class="size-selector">
+                  <input type="radio" id="size35" name="size" value="35" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size35" class="size-label">35</label>
+                  
+                  <input type="radio" id="size36" name="size" value="36" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size36" class="size-label">36</label>
+                  
+                  <input type="radio" id="size37" name="size" value="37" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size37" class="size-label">37</label>
+                  
+                  <input type="radio" id="size38" name="size" value="38" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size38" class="size-label">38</label>
+                  
+                  <input type="radio" id="size39" name="size" value="39" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size39" class="size-label">39</label>
+                  
+                  <input type="radio" id="size40" name="size" value="40" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size40" class="size-label">40</label>
+                  
+                  <input type="radio" id="size41" name="size" value="41" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size41" class="size-label">41</label>
+                  
+                  <input type="radio" id="size42" name="size" value="42" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size42" class="size-label">42</label>
+                  
+                  <input type="radio" id="size43" name="size" value="43" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size43" class="size-label">43</label>
+                  
+                  <input type="radio" id="size44" name="size" value="44" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size44" class="size-label">44</label>
+                  
+                  <input type="radio" id="size45" name="size" value="45" class="d-none size-input" onchange="document.querySelector('input[name=quantity]').value = 1;">
+                  <label for="size45" class="size-label">45</label>
+                </div>
+              </div>
+              
+              <div class="mb-4">
+                <label class="font-weight-bold mb-3">Cantidad:</label>
+                <div class="d-flex align-items-center">
+                  <div class="btn-group btn-group-lg" role="group">
+                    <button class="btn btn-outline-secondary px-3" type="button" onclick="var input = document.querySelector('input[name=quantity]'); if(input.value > 1) input.value = parseInt(input.value) - 1;">-</button>
+                    <input type="text" name="quantity" class="form-control text-center border-left-0 border-right-0" style="width: 80px; -moz-appearance: textfield;" value="1" readonly>
+                    <button class="btn btn-outline-secondary px-3" type="button" onclick="var input = document.querySelector('input[name=quantity]'); if(input.value < 99) input.value = parseInt(input.value) + 1;">+</button>
+                  </div>
+                </div>
+              </div>
+              
+              <input type="hidden" name="override" value="False">
+              
+              <button type="submit" class="btn btn-primary btn-lg btn-block mb-3">
+                <span class="icon-shopping_cart mr-2"></span>Añadir al carrito
+              </button>
+              
+              <a href="{% url 'shop:product_list' %}" class="btn btn-outline-secondary btn-block">
+                <span class="icon-arrow_back mr-2"></span>Volver a la tienda
+              </a>
+            </form>
+            
+            <div class="mt-5">
+              <h5 class="font-weight-bold mb-3">Información adicional</h5>
+              <ul class="list-unstyled">
+                <li class="mb-2"><span class="icon-local_shipping mr-2 text-primary"></span>Envío gratis en pedidos superiores a $50</li>
+                <li class="mb-2"><span class="icon-verified_user mr-2 text-primary"></span>Garantía de calidad</li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="site-section block-3 site-blocks-2 bg-light">
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-md-7 site-section-heading text-center pt-4">
-            <h2>Productos</h2>
-          </div>
-        </div>
-      </div>
-    </div>
 {% endblock %}
