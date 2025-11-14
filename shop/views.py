@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from cart.forms import CartAddProductForm
-from .models import Category, Product
+from .models import Category, Product, ProductSize
 
 # from django.views import generic
 
@@ -49,7 +49,8 @@ def product_detail(request, id, slug):
     # Usar Product.objects para que en modo MockDB pase por el FakeManager/FakeQuerySet
     product = get_object_or_404(Product.objects, id=id, slug=slug, available=True)
     cart_product_form = CartAddProductForm()
-    context = {'product': product, 'cart_product_form': cart_product_form}
+    sizes = list(ProductSize.objects.filter(product=product))
+    context = {'product': product, 'cart_product_form': cart_product_form, 'sizes': sizes}
     return render(request, 'shop/product/detail.html', context)
 
 
