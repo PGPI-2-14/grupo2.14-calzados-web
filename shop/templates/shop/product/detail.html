@@ -24,35 +24,75 @@
         <div class="row">
           <div class="col-md-6 mb-4">
             <div class="card border-0 shadow-sm">
-              {% if product.images.exists %}
-                {% with primary_image=product.images.filter.is_primary|first %}
-                  {% if primary_image %}
-                    <img src="{{ primary_image.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
-                  {% else %}
-                    <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
-                  {% endif %}
-                {% endwith %}
+              {% if primary_image %}
+                <img src="{{ primary_image.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
               {% elif product.image %}
                 <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
               {% else %}
                 <img src="{% static 'img/placeholder-product.jpg' %}" alt="No image available" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
               {% endif %}
             </div>
+            
+            <div class="mt-3">
+              <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white" id="moreInfoHeading">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link text-dark text-decoration-none d-flex justify-content-between align-items-center w-100" type="button" data-toggle="collapse" data-target="#moreInfoCollapse" aria-expanded="false" aria-controls="moreInfoCollapse">
+                      <span><span class="icon-info mr-2"></span>Más información</span>
+                      <span class="icon-keyboard_arrow_down"></span>
+                    </button>
+                  </h5>
+                </div>
+                <div id="moreInfoCollapse" class="collapse" aria-labelledby="moreInfoHeading">
+                  <div class="card-body">
+                    <div class="mb-3">
+                      <p class="text-muted mb-0">{{ product.description|linebreaks }}</p>
+                    </div>
+                    <hr>
+                    <div class="row">
+                      {% if product.gender and product.gender != 'unisex' %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Género</p>
+                        <p class="mb-0 font-weight-bold">{{ product.gender|title }}</p>
+                      </div>
+                      {% endif %}
+                      {% if product.color %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Color</p>
+                        <p class="mb-0 font-weight-bold">{{ product.color }}</p>
+                      </div>
+                      {% endif %}
+                      {% if product.material %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Material</p>
+                        <p class="mb-0 font-weight-bold">{{ product.material }}</p>
+                      </div>
+                      {% endif %}
+                      {% if product.brand %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Marca</p>
+                        <p class="mb-0 font-weight-bold">{{ product.brand.name }}</p>
+                      </div>
+                      {% endif %}
+                      {% if product.category %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Categoría</p>
+                        <p class="mb-0 font-weight-bold">{{ product.category.name }}</p>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div class="col-md-6">
             <h2 class="text-black mb-3">{{ product.name }}</h2>
             
-            {% if product.brand %}
-            <div class="mb-2">
-              <span class="text-muted">Marca: </span>
-              <strong>{{ product.brand.name }}</strong>
-            </div>
-            {% endif %}
-            
             <div class="mb-4">
               <span id="stock-badge" class="badge {% if product.available and product.stock > 0 %}badge-success{% else %}badge-danger{% endif %}">
-                {% if sizes %}Seleccione talla{% else %}{% if product.available and product.stock > 0 %}En stock ({{ product.stock }}){% else %}Agotado{% endif %}{% endif %}
+                {% if sizes %}Seleccione talla{% else %}{% if product.available and product.stock > 0 %}En stock{% else %}Agotado{% endif %}{% endif %}
               </span>
             </div>
 
@@ -63,19 +103,6 @@
                 <span class="badge badge-warning">Oferta</span>
               {% else %}
                 <h3 class="text-primary mb-0">${{ product.price }}</h3>
-              {% endif %}
-            </div>
-            
-            <div class="mb-4">
-              <p class="text-muted mb-3">{{ product.description|linebreaks }}</p>
-              {% if product.gender and product.gender != 'unisex' %}
-                <p class="mb-1"><strong>Género:</strong> {{ product.gender|title }}</p>
-              {% endif %}
-              {% if product.color %}
-                <p class="mb-1"><strong>Color:</strong> {{ product.color }}</p>
-              {% endif %}
-              {% if product.material %}
-                <p class="mb-1"><strong>Material:</strong> {{ product.material }}</p>
               {% endif %}
             </div>
             
@@ -95,7 +122,7 @@
                              class="d-none size-input"
                              onchange="onSizeSelected(this)"
                              required>
-                      <label for="size{{ forloop.counter }}" class="size-label">{{ size.size }} <small class="text-muted">({{ size.stock }})</small></label>
+                      <label for="size{{ forloop.counter }}" class="size-label">{{ size.size }}</label>
                     {% else %}
                       <input type="radio"
                              id="size{{ forloop.counter }}"
@@ -152,6 +179,8 @@
       </div>
     </div>
 
+    
+
 <script>
   // enable/disable add button and show stock per selected size
   function onSizeSelected(radio) {
@@ -163,7 +192,7 @@
     if (stock > 0) {
       badge.classList.remove('badge-danger');
       badge.classList.add('badge-success');
-      badge.textContent = 'En stock (' + stock + ')';
+      badge.textContent = 'En stock';
       if (addBtn) addBtn.disabled = false;
       if (qtyInput) { qtyInput.value = 1; qtyInput.max = stock; }
     } else {
