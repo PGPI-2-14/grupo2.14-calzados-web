@@ -7,8 +7,12 @@ from . import admin_views
 app_name = 'accounts'
 
 urlpatterns = [
+    path('update-field/', views.update_field, name='update_field'),
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
+    path('profile/', views.profile_view, name='profile'),
+    path('logout/', views.logout_view, name='logout'),
+    path('my-data/', views.my_data_view, name='my_data'),
     path('admin-lite/', views.admin_dashboard, name='admin_dashboard'),
     # Productos (admin-lite)
     path('admin-lite/products/', admin_views.product_list, name='admin_products'),

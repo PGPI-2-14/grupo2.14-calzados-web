@@ -19,7 +19,21 @@
                     <div class="col-6 col-md-4 order-3 order-md-3 text-right">
                         <div class="site-top-icons">
                             <ul>
-                                <li><a href="#"><span class="icon icon-person"></span></a></li>
+                                <li>
+                                    {% if user.is_authenticated %}
+                                        <a href="{% url 'accounts:profile' %}">
+                                            <span class="icon icon-person"></span> {{ user.username }}
+                                        </a>
+                                    {% elif request.session.mock_user %}
+                                        <a href="{% url 'accounts:profile' %}">
+                                            <span class="icon icon-person"></span> {{ request.session.mock_user.username }}
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'accounts:login' %}">
+                                            <span class="icon icon-person"></span>
+                                        </a>
+                                    {% endif %}
+                                </li>
                                 <li>
                                     <a href="{% url "cart:cart_detail" %}" class="site-cart">
                                         <span class="icon icon-shopping_cart"></span>

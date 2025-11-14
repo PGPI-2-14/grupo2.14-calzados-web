@@ -3,22 +3,107 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.conf import settings
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+
 import os
 import json
+from pathlib import Path
 
 from .utils import require_admin, require_customer, SESSION_USER_ROLE, SESSION_USER_ID
 from .models import UserAccount
 from order.models import Order, OrderItem
 
+@csrf_exempt
+def update_field(request):
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Método no permitido"}, status=400)
 
-def login_view(request: HttpRequest) -> HttpResponse:
-    # Placeholder: vista de login no implementada aún
+    try:
+        data = json.loads(request.body)
+        field = data["field"]
+        value = data["value"]
+    except Exception:
+        return JsonResponse({"status": "error", "message": "JSON inválido"}, status=400)
+
+    user = request.session.get("mock_user")
+    if not user:
+        return JsonResponse({"status": "error", "message": "No autenticado"}, status=403)
+
+    json_path = (
+        Path(__file__).resolve().parent.parent
+        / "tests" / "mockdb" / "data" / "customers.json"
+    )
+
+    with open(json_path, "r", encoding="utf-8") as file:
+        users = json.load(file)
+
+    for u in users:
+        if u["username"] == user["username"]:
+            u[field] = value
+            break
+    else:
+        return JsonResponse({"status": "error", "message": "Usuario no encontrado"}, status=404)
+
+
+    with open(json_path, "w", encoding="utf-8") as file:
+        json.dump(users, file, indent=4, ensure_ascii=False)
+
+    user[field] = value
+    request.session["mock_user"] = user
+
+    return JsonResponse({"status": "ok"})
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        data_path = Path(__file__).resolve().parent.parent / 'tests' / 'mockdb' / 'data' / 'customers.json'
+
+        try:
+            with open(data_path, 'r', encoding='utf-8') as file:
+                users = json.load(file)
+        except FileNotFoundError:
+            messages.error(request, 'No se encontró el archivo de usuarios de prueba.')
+            return render(request, 'accounts/login.html')
+
+        for user in users:
+            if user['username'] == username and user['password'] == password:
+                request.session['mock_user'] = user
+                return redirect('shop:product_list')
+
+        messages.error(request, 'Usuario o contraseña incorrectos.')
+
     return render(request, 'accounts/login.html')
+
+def profile_view(request):
+    if 'mock_user' in request.session:
+        return render(request, 'accounts/profile.html', {'user': request.session['mock_user']})
+
+    else:
+        return redirect('accounts:login')
+
+def logout_view(request):
+    if 'mock_user' in request.session:
+        del request.session['mock_user']
+
+    return redirect('accounts:login')
 
 
 def register_view(request: HttpRequest) -> HttpResponse:
     # Placeholder: vista de registro no implementada aún
     return render(request, 'accounts/register.html')
+
+def my_data_view(request):
+    if 'mock_user' not in request.session:
+        return redirect('accounts:login')
+
+    user = request.session['mock_user']
+
+    return render(request, 'accounts/my_data.html', {'user': user})
 
 
 @require_admin
