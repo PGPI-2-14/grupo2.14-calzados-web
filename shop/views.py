@@ -20,10 +20,39 @@ def product_list(request, category_slug=None):
     category = None
     categories = Category.objects.all()
     products = Product.objects.filter(available=True)
+    selected_brand = request.GET.get('brand')
+    selected_color = request.GET.get('color')
+    selected_material = request.GET.get('material')
+    
     if category_slug:
         category = get_object_or_404(Category, slug=category_slug)
         products = products.filter(category=category)
-    context = {'category': category, 'categories': categories, 'products': products}
+    
+    if selected_brand:
+        products = [p for p in products if p.brand and p.brand.name == selected_brand]
+    
+    if selected_color:
+        products = [p for p in products if p.color == selected_color]
+    
+    if selected_material:
+        products = [p for p in products if p.material == selected_material]
+    
+    all_products = Product.objects.filter(available=True)
+    brands = list(set([p.brand.name for p in all_products if p.brand]))
+    colors = list(set([p.color for p in all_products if p.color]))
+    materials = list(set([p.material for p in all_products if p.material]))
+    
+    context = {
+        'category': category,
+        'categories': categories,
+        'products': products,
+        'brands': sorted(brands),
+        'colors': sorted(colors),
+        'materials': sorted(materials),
+        'selected_brand': selected_brand,
+        'selected_color': selected_color,
+        'selected_material': selected_material,
+    }
     return render(request, 'shop/product/list.html', context)
 
 
