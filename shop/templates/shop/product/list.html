@@ -7,28 +7,64 @@
 <div class="bg-light py-3">
     <div class="container">
         <div class="row">
-            <div class="col-md-12 mb-0"><a href="index.html">Menú Principal</a> <span class="mx-2 mb-0">/</span> <strong
-                    class="text-black">Tienda</strong></div>
+            <div class="col-md-12 mb-0">
+                <a href="{% url 'shop:product_list' %}">Menú Principal</a> 
+                <span class="mx-2 mb-0">/</span> 
+                <strong class="text-black">Tienda</strong>
+            </div>
         </div>
     </div>
 </div>
 
 <div class="site-section">
     <div class="container">
+        {% if user.is_staff %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-light border d-flex justify-content-between align-items-center">
+                    <span class="font-weight-bold"><span class="icon-admin_panel_settings mr-2"></span>Panel de administración</span>
+                    <div>
+                        <a href="{% url 'shop:product_create' %}" class="btn btn-success btn-sm mr-2">
+                            <span class="icon-add_circle mr-1"></span>Nuevo Producto
+                        </a>
+                        <a href="{% url 'shop:category_create' %}" class="btn btn-info btn-sm">
+                            <span class="icon-add_circle mr-1"></span>Nueva Categoría
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
         <div class="row mb-5">
             <div class="col-md-9 order-2">
                 <div class="row mb-5">
                     {% for product in products %}
                     <div class="col-sm-6 col-lg-4 mb-4" data-aos="fade-up">
-                        <div class="block-4 text-center border">
-                            <figure class="block-4-image">
-                                <a href="{{ product.get_absolute_url }}"><img src="{{ product.image.url }}" 
-                                        alt="Image placeholder" class="img-fluid" style="height: 10vw;"></a>
-                            </figure>
-                            <div class="block-4-text p-4">
-                                <h3><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
-                                <p class="mb-0">{{ product.description }}</p>
-                                <p class="text-primary font-weight-bold">${{ product.price }}</p>
+                        <div class="card border-0 shadow-sm h-100 product-card">
+                            <a href="{{ product.get_absolute_url }}" class="position-relative overflow-hidden">
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top" style="height: 250px; object-fit: cover; transition: transform 0.3s;">
+                            </a>
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">
+                                    <a href="{{ product.get_absolute_url }}" class="text-dark text-decoration-none">{{ product.name }}</a>
+                                </h5>
+                                <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:15 }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-auto">
+                                    <strong class="text-primary">${{ product.price }}</strong>
+                                    <form action="{% url 'cart:cart_add' product.id %}" method="post" class="d-flex align-items-center" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {this.querySelector('button[type=submit]').innerHTML = '<span class=\'icon-check\'></span>'; setTimeout(() => this.querySelector('button[type=submit]').innerHTML = '<span class=\'icon-shopping_cart\'></span>', 1500);});">
+                                        {% csrf_token %}
+                                        <div class="btn-group btn-group-sm mr-2" role="group">
+                                            <button class="btn btn-outline-secondary py-0 px-2" type="button" onclick="var input = this.parentElement.querySelector('input'); if(input.value > 1) input.value = parseInt(input.value) - 1;">-</button>
+                                            <input type="text" name="quantity" class="form-control form-control-sm text-center border-left-0 border-right-0 py-0" style="width: 40px; -moz-appearance: textfield;" value="1" readonly>
+                                            <button class="btn btn-outline-secondary py-0 px-2" type="button" onclick="var input = this.parentElement.querySelector('input'); if(input.value < 99) input.value = parseInt(input.value) + 1;">+</button>
+                                        </div>
+                                        <input type="hidden" name="override" value="False">
+                                        <button type="submit" class="btn btn-primary btn-sm py-1 px-2" title="Añadir al carrito">
+                                            <span class="icon-shopping_cart"></span>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -37,36 +73,136 @@
                 
                 <div class="row" data-aos="fade-up">
                     <div class="col-md-12 text-center">
-                        <div class="site-block-27">
-                            <ul>
-                                <li><a href="#">&lt;</a></li>
-                                <li class="active"><span>1</span></li>
-                                <li><a href="#">2</a></li>
-                                <li><a href="#">3</a></li>
-                                <li><a href="#">4</a></li>
-                                <li><a href="#">5</a></li>
-                                <li><a href="#">&gt;</a></li>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">&lt;</a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item"><a class="page-link" href="#">4</a></li>
+                                <li class="page-item"><a class="page-link" href="#">5</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">&gt;</a>
+                                </li>
                             </ul>
-                        </div>
+                        </nav>
                     </div>
                 </div>
             </div>
+
             <div class="col-md-3 order-1 mb-5 mb-md-0">
-                <div class="border p-4 rounded mb-4">
-                    <h3 class="mb-3 h6 text-uppercase text-black d-block">Categorías</h3>
-                    <ul class="list-unstyled mb-0">
-                        <li {% if not category %} class="mb-1" {% endif %}>
-                            <a href="{% url "shop:product_list" %}" class="d-flex"><span>Todo</a>
-                        </li>
-                        {% for c in categories %}
-                        <li {% if category.slug == c.slug %} class="mb-1" {% endif %}>
-                            <a href="{{ c.get_absolute_url }}" class="d-flex">{{ c.name }}</a>
-                        </li>
-                        {% endfor %}
-                    </ul>
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h3 class="h6 text-uppercase font-weight-bold mb-3">
+                            <span class="icon-filter_list mr-2"></span>Filtrar por
+                        </h3>
+                        
+                        <div class="filter-section mb-3">
+                            <button class="btn btn-link text-dark font-weight-bold w-100 text-left p-0 mb-2" type="button" data-toggle="collapse" data-target="#categoryFilter">
+                                Categorías <span class="float-right icon-keyboard_arrow_down"></span>
+                            </button>
+                            <div class="collapse show" id="categoryFilter">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="{% url 'shop:product_list' %}" class="text-decoration-none">
+                                            <span>Todo {% if not category %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% for c in categories %}
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="?category={{ c.slug }}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
+                                            <span>{{ c.name }} {% if category.slug == c.slug %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="filter-section mb-3">
+                            <button class="btn btn-link text-dark font-weight-bold w-100 text-left p-0 mb-2" type="button" data-toggle="collapse" data-target="#brandFilter">
+                                Marcas <span class="float-right icon-keyboard_arrow_down"></span>
+                            </button>
+                            <div class="collapse" id="brandFilter">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="?{% if category %}category={{ category.slug }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
+                                            <span>Todas {% if not selected_brand %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% for brand in brands %}
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="?{% if category %}category={{ category.slug }}&{% endif %}brand={{ brand }}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
+                                            <span>{{ brand|title }} {% if selected_brand == brand %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="filter-section mb-3">
+                            <button class="btn btn-link text-dark font-weight-bold w-100 text-left p-0 mb-2" type="button" data-toggle="collapse" data-target="#colorFilter">
+                                Colores <span class="float-right icon-keyboard_arrow_down"></span>
+                            </button>
+                            <div class="collapse" id="colorFilter">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="?{% if category %}category={{ category.slug }}{% endif %}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
+                                            <span>Todos {% if not selected_color %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% for color in colors %}
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="?{% if category %}category={{ category.slug }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}&{% endif %}color={{ color }}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
+                                            <span>{{ color|title }} {% if selected_color == color %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="filter-section mb-3">
+                            <button class="btn btn-link text-dark font-weight-bold w-100 text-left p-0 mb-2" type="button" data-toggle="collapse" data-target="#materialFilter">
+                                Materiales <span class="float-right icon-keyboard_arrow_down"></span>
+                            </button>
+                            <div class="collapse" id="materialFilter">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="?{% if category %}category={{ category.slug }}{% endif %}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}" class="text-decoration-none">
+                                            <span>Todos {% if not selected_material %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% for material in materials %}
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="?{% if category %}category={{ category.slug }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}&{% endif %}{% if selected_color %}color={{ selected_color }}&{% endif %}material={{ material }}" class="text-decoration-none">
+                                            <span>{{ material|title }} {% if selected_material == material %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        {% if selected_brand or selected_color or selected_material %}
+                        <a href="{% url 'shop:product_list' %}{% if category %}{{ category.slug }}/{% endif %}" class="btn btn-outline-danger btn-sm btn-block">
+                            <span class="icon-clear mr-1"></span>Limpiar filtros
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
