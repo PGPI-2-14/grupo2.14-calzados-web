@@ -7,6 +7,7 @@ from .shipping import compute_shipping
 import braintree
 from config.braintreeSettings import BRAINTREE_CONF
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 def _mockdb_active():
     return os.environ.get('USE_MOCKDB') == '1' or getattr(settings, 'USE_MOCKDB', False)
@@ -52,51 +53,79 @@ def order_create(request):
         form = OrderCreateForm()
     return render(request, 'order/create.html', {'cart': cart, 'form': form})
 
-gateway = braintree.BraintreeGateway(BRAINTREE_CONF)
+def _get_braintree_gateway():
+    """
+    Lazily build and validate a Braintree gateway. Prefer settings.BRAINTREE_CONF,
+    then fall back to the imported BRAINTREE_CONF. Raise ImproperlyConfigured if
+    credentials are missing.
+    """
+    conf = getattr(settings, 'BRAINTREE_CONF', None) or globals().get('BRAINTREE_CONF', None)
+    if not conf:
+        raise ImproperlyConfigured(
+            "BRAINTREE_CONF not found. Define settings.BRAINTREE_CONF or set config.braintreeSettings.BRAINTREE_CONF."
+        )
+    merchant = getattr(conf, 'merchant_id', None)
+    public = getattr(conf, 'public_key', None)
+    private = getattr(conf, 'private_key', None)
+    if not merchant or not public or not private:
+        raise ImproperlyConfigured(
+            "BRAINTREE_CONF missing credentials (merchant_id/public_key/private_key). "
+            "Set BRAINTREE_MERCHANT_ID, BRAINTREE_PUBLIC_KEY and BRAINTREE_PRIVATE_KEY."
+        )
+    return braintree.BraintreeGateway(conf)
+
 
 def payment_process(request, order_id):
-    # En MockDB, get_object_or_404 utilizará el FakeManager si ya está parcheado.
-    # Si por alguna razón no se aplicó el patch todavía y la BD es dummy, hacemos fallback manual.
+    # get order (works with mockdb)
     if _mockdb_active():
         try:
-            order = Order.objects.get(id=order_id)  # FakeManager path
+            order = Order.objects.get(id=order_id)
         except Exception:
-            # Fallback manual: buscar en atributos internos si FakeManager expone _data
             data = getattr(Order.objects, '_data', [])
             order = next((o for o in data if getattr(o, 'id', None) == order_id), None)
             if not order:
                 return render(request, 'order/payment.html', {'error': 'Pedido no encontrado (MockDB).'})
     else:
         order = get_object_or_404(Order, id=order_id)
-    
+
+    # try to create gateway (render friendly error if config is missing)
+    try:
+        gateway = _get_braintree_gateway()
+    except ImproperlyConfigured as e:
+        return render(request, 'order/payment.html', {'order': order, 'error': str(e), 'client_token': None})
+
     if request.method == 'POST':
         nonce = request.POST.get('payment_method_nonce')
-        
         result = gateway.transaction.sale({
             'amount': str(order.get_total_cost()),
             'payment_method_nonce': nonce,
-            'options': {
-                'submit_for_settlement': True
-            }
+            'options': {'submit_for_settlement': True}
         })
-        
+
         if result.is_success:
             order.paid = True
-            order.braintree_id = result.transaction.id
+            if getattr(result, 'transaction', None) and getattr(result.transaction, 'id', None):
+                order.braintree_id = result.transaction.id
             order.save()
             return redirect('order:order_created', order.id)
         else:
+            client_token = None
+            try:
+                client_token = gateway.client_token.generate()
+            except Exception:
+                pass
             return render(request, 'order/payment.html', {
                 'order': order,
                 'error': result.message,
-                'client_token': gateway.client_token.generate()
+                'client_token': client_token
             })
     else:
-        client_token = gateway.client_token.generate()
-        return render(request, 'order/payment.html', {
-            'order': order,
-            'client_token': client_token
-        })
+        client_token = None
+        try:
+            client_token = gateway.client_token.generate()
+        except Exception:
+            pass
+        return render(request, 'order/payment.html', {'order': order, 'client_token': client_token})
 
 def order_created(request, order_id):
     order = get_object_or_404(Order, id=order_id)
