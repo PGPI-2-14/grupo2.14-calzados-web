@@ -64,9 +64,13 @@ Pago
                                             <strong>${{ item.total_price }}</strong>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <a href="{% url "cart:cart_remove" product.id %}" class="btn btn-sm btn-danger rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Eliminar producto" onclick="return confirm('¿Estás seguro de que deseas eliminar este producto del carrito?');">
-                                                <span class="icon-delete"></span>
-                                            </a>
+                                            <form method="post" action="{% url 'cart:cart_remove' item.product.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="size" value="{{ item.size }}">
+                                                <button type="submit" class="btn btn-sm btn-danger rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Eliminar producto" onclick="return confirm('¿Estás seguro de que deseas eliminar este producto del carrito?');">
+                                                    <span class="icon-delete"></span>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                     {% endwith %}

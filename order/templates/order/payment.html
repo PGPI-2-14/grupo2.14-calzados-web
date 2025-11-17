@@ -27,60 +27,33 @@ Pago
                         <h3 class="h5 text-uppercase mb-4 font-weight-bold">
                             <span class="icon-credit_card mr-2"></span>Información de pago
                         </h3>
-                        <form action="{% url 'order:order_created' order.id %}" method="get">
-                        <!-- TEMPORAL FUNCION CORRECTA A IMPLEMENTAR EN DB 
-                         <form action="{% url 'order:payment_process' order.id %}" method="post">
+                        
+                        {% if error %}
+                        <div class="alert alert-danger">
+                            <span class="icon-error mr-2"></span>{{ error }}
+                        </div>
+                        {% endif %}
+                        
+                        <form id="payment-form" action="{% url 'order:payment_process' order.id %}" method="post">
                             {% csrf_token %}
-                        -->
                             
-                            <div class="form-group">
-                                <label>Método de pago</label>
-                                <div class="btn-group btn-group-toggle d-flex" data-toggle="buttons">
-                                    <label class="btn btn-outline-primary active">
-                                        <input type="radio" name="payment_method" value="card" checked> 
-                                        <span class="icon-credit_card"></span> Tarjeta
-                                    </label>
-                                    <label class="btn btn-outline-primary">
-                                        <input type="radio" name="payment_method" value="contrareembolso"> 
-                                        <span class="icon-attach_money"></span> Contrareembolso
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div id="card-payment">
-                                <div class="form-group">
-                                    <label for="card_number">Número de tarjeta</label>
-                                    <input type="text" class="form-control" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" maxlength="19" required>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="expiry">Fecha de expiración</label>
-                                            <input type="text" class="form-control" id="expiry" name="expiry" placeholder="MM/AA" maxlength="5" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="cvv">CVV</label>
-                                            <input type="text" class="form-control" id="cvv" name="cvv" placeholder="123" maxlength="4" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="card_name">Nombre en la tarjeta</label>
-                                    <input type="text" class="form-control" id="card_name" name="card_name" placeholder="Nombre completo" required>
-                                </div>
-                            </div>
-
+                            <div id="dropin-container" class="mb-4"></div>
+                            
+                            <input type="hidden" id="payment-method-nonce" name="payment_method_nonce">
+                            
                             <div class="alert alert-info mt-4">
                                 <span class="icon-security mr-2"></span>
-                                <small>Tu información de pago está protegida y encriptada</small>
+                                <small>Tu información de pago está protegida por Braintree (PayPal)</small>
                             </div>
-                            <button type="submit" class="btn btn-success btn-lg btn-block py-3 mt-3">
+
+                            <button id="submit-button" type="submit" class="btn btn-success btn-lg btn-block py-3 mt-3">
                                 <span class="icon-lock mr-2"></span>Pagar ${{ order.get_total_cost|floatformat:"2" }}
                             </button>
-
                         </form>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Modo sandbox - Usa las credenciales de prueba de Braintree</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -140,23 +113,48 @@ Pago
     </div>
 </div>
 
-<script> // Para formatear los datos de pago
-document.getElementById('card_number').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\s/g, '');
-    let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-    e.target.value = formattedValue;
-});
+<script src="https://js.braintreegateway.com/web/dropin/1.33.7/js/dropin.min.js"></script>
+<script>
+var submitButton = document.querySelector('#submit-button');
+var form = document.querySelector('#payment-form');
 
-document.getElementById('expiry').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length >= 2) {
-        value = value.slice(0,2) + '/' + value.slice(2,4);
+braintree.dropin.create({
+  authorization: '{{ client_token }}',
+  container: '#dropin-container',
+  card: {
+    cardholderName: {
+      required: true
     }
-    e.target.value = value;
-});
+  },
+  paypal: {
+    flow: 'checkout',
+    amount: '{{ order.get_total_cost }}',
+    currency: 'USD'
+  }
+}, function (createErr, instance) {
+  if (createErr) {
+    console.error('Error creating Drop-in:', createErr);
+    return;
+  }
 
-document.getElementById('cvv').addEventListener('input', function(e) {
-    e.target.value = e.target.value.replace(/\D/g, '');
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm mr-2"></span>Procesando...';
+
+    instance.requestPaymentMethod(function (requestPaymentMethodErr, payload) {
+      if (requestPaymentMethodErr) {
+        console.error('Error requesting payment method:', requestPaymentMethodErr);
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<span class="icon-lock mr-2"></span>Pagar ${{ order.get_total_cost|floatformat:"2" }}';
+        return;
+      }
+
+      document.querySelector('#payment-method-nonce').value = payload.nonce;
+      form.submit();
+    });
+  });
 });
 </script>
 {% endblock %}

@@ -18,10 +18,8 @@ def cart_add(request, product_id):
 
 def cart_remove(request, product_id):
     cart = Cart(request)
-    # Pasar por Product.objects para forzar el uso del FakeManager en MockDB
-    product = get_object_or_404(Product.objects, id=product_id)
-    size = request.GET.get('size')
-    cart.remove(product, size=size)
+    size = request.POST.get('size')
+    cart.remove(product_id, size=size)
     return redirect('cart:cart_detail')
 
 def cart_clear(request):
