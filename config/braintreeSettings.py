@@ -1,7 +1,7 @@
 # Braintree settings
-BRAINTREE_MERCHANT_ID = 'your_merchant_id'  # Get from Braintree dashboard
-BRAINTREE_PUBLIC_KEY = 'your_public_key'
-BRAINTREE_PRIVATE_KEY = 'your_private_key'
+BRAINTREE_MERCHANT_ID = 'merchant'  # Get from Braintree dashboard
+BRAINTREE_PUBLIC_KEY = 'public'
+BRAINTREE_PRIVATE_KEY = 'private'
 
 import braintree
 
