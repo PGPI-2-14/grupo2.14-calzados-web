@@ -44,6 +44,9 @@ class Order(models.Model):
     shipping_address = models.CharField(max_length=250, default='') # direccion_envio
     phone = models.CharField(max_length=30, default='')
     paid = models.BooleanField(default=False)
+    
+    #Braintree atributes
+    braintree_id = models.CharField(max_length=150, blank=True)
 
     class Meta:
         ordering = ('-created',)
