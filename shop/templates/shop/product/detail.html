@@ -99,7 +99,7 @@
             <div class="mb-4">
               {% if product.offer_price and product.offer_price < product.price %}
                 <h3 class="text-primary mb-1">${{ product.offer_price }}</h3>
-                <h5 class="text-muted text-decoration-line-through mb-0">${{ product.price }}</h5>
+                <h5 class="text-muted mb-0"><del>${{ product.price }}</del></h5>
                 <span class="badge badge-warning">Oferta</span>
               {% else %}
                 <h3 class="text-primary mb-0">${{ product.price }}</h3>
@@ -108,6 +108,8 @@
             
             <form action="{% url 'cart:cart_add' product.id %}" method="post" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {var btn = this.querySelector('button[type=submit]'); btn.innerHTML = '<span class=\'icon-check mr-2\'></span>Añadido al carrito'; btn.classList.remove('btn-primary'); btn.classList.add('btn-success'); setTimeout(() => {btn.innerHTML = '<span class=\'icon-shopping_cart mr-2\'></span>Añadir al carrito'; btn.classList.remove('btn-success'); btn.classList.add('btn-primary');}, 2000);});">
               {% csrf_token %}
+              
+              <input type="hidden" name="price" value="{% if product.offer_price and product.offer_price < product.price %}{{ product.offer_price }}{% else %}{{ product.price }}{% endif %}">
               
               <div class="mb-4">
                 <label class="font-weight-bold mb-3">Selecciona tu talla (EU):</label>

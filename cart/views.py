@@ -13,7 +13,9 @@ def cart_add(request, product_id):
     if form.is_valid():
         cd = form.cleaned_data
         size = cd.get('size') or request.POST.get('size')
-        cart.add(product=product, quantity=cd['quantity'], update_quantity=cd['update'], size=size)
+        # Use price from form (offer price if available, else regular price)
+        price = request.POST.get('price') or product.price
+        cart.add(product=product, quantity=cd['quantity'], update_quantity=cd['update'], size=size, price=price)
     return redirect('cart:cart_detail')
 
 def cart_remove(request, product_id):

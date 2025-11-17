@@ -15,7 +15,7 @@ class Cart():
             cart = self.session[settings.CART_SESSION_ID] = {}
         self.cart = cart
 
-    def add(self, product, quantity=1, update_quantity=False, size=None):
+    def add(self, product, quantity=1, update_quantity=False, size=None, price=None):
         """
         Add a product to the cart or update its quantity.
         """
@@ -23,10 +23,13 @@ class Cart():
         # Use product_id + size as key to allow same product in different sizes
         cart_key = f"{product_id}_{size}" if size else product_id
         
+        if price is None:
+            price = product.price
+        
         if cart_key not in self.cart:
             self.cart[cart_key] = {
                 'quantity': 0,
-                'price': str(product.price),
+                'price': str(price),
                 'product_id': product_id,
                 'size': size
             }
