@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 from cart.cart import Cart
 from .models import Order, OrderItem

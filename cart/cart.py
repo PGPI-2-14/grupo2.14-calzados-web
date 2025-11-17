@@ -42,6 +42,13 @@ class Cart():
         if product_id in self.cart:
             del self.cart[product_id]
             self.save()
+            
+    def clear(self):
+        """
+        Remove cart from session
+        """
+        del self.session[settings.CART_SESSION_ID]
+        self.save()
 
     def __iter__(self):
         """
