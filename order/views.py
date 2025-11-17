@@ -1,5 +1,4 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 from cart.cart import Cart
 from .models import Order, OrderItem
@@ -7,6 +6,10 @@ from .forms import OrderCreateForm
 from .shipping import compute_shipping
 import braintree
 from config.braintreeSettings import BRAINTREE_CONF
+import os
+
+def _mockdb_active():
+    return os.environ.get('USE_MOCKDB') == '1' or getattr(settings, 'USE_MOCKDB', False)
 
 def _generate_order_number(next_id: int) -> str:
     return f"MOCK-{next_id:04d}"
@@ -21,16 +24,16 @@ def order_create(request):
             shipping_cost = compute_shipping(subtotal, 'home')
             total = subtotal + shipping_cost
             
-            next_id = getattr(Order.objects, '_next_id', 1)
+            # No forzar id: el FakeManager asigna un id único evitando duplicados
+            next_generated_id = getattr(Order.objects, '_next_id', 1)
             order = Order.objects.create(
-                id=next_id,
                 first_name=cd['first_name'],
                 last_name=cd['last_name'],
                 email=cd['email'],
                 address=cd['address'],
                 postal_code=cd['postal_code'],
                 city=cd['city'],
-                order_number=_generate_order_number(next_id),
+                order_number=_generate_order_number(next_generated_id),
                 status='pending',
                 subtotal=str(subtotal),
                 shipping_cost=str(shipping_cost),
@@ -52,7 +55,19 @@ def order_create(request):
 gateway = braintree.BraintreeGateway(BRAINTREE_CONF)
 
 def payment_process(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    # En MockDB, get_object_or_404 utilizará el FakeManager si ya está parcheado.
+    # Si por alguna razón no se aplicó el patch todavía y la BD es dummy, hacemos fallback manual.
+    if _mockdb_active():
+        try:
+            order = Order.objects.get(id=order_id)  # FakeManager path
+        except Exception:
+            # Fallback manual: buscar en atributos internos si FakeManager expone _data
+            data = getattr(Order.objects, '_data', [])
+            order = next((o for o in data if getattr(o, 'id', None) == order_id), None)
+            if not order:
+                return render(request, 'order/payment.html', {'error': 'Pedido no encontrado (MockDB).'})
+    else:
+        order = get_object_or_404(Order, id=order_id)
     
     if request.method == 'POST':
         nonce = request.POST.get('payment_method_nonce')
