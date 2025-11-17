@@ -80,7 +80,7 @@ class Cart():
         products = {str(p.id): p for p in Product.objects.filter(id__in=product_ids)}
         
         for key, item in self.cart.items():
-            product_id = item['product_id']
+            product_id = item.get('product_id')
             if product_id in products:
                 item['product'] = products[product_id]
                 item['price'] = Decimal(item['price'])
