@@ -57,7 +57,14 @@ Thank you
                                         <td class="align-middle text-center">
                                             <span class="badge badge-secondary">{{ item.quantity }}x</span>
                                         </td>
-                                        <td class="align-middle text-right">${{ item.price }}</td>
+                                        <td class="align-middle text-right">
+                                            {% if item.product.offer %}
+                                                <span class="text-muted"><small><strike>${{ item.price }}</strike></small></span><br>
+                                                ${{ item.product.offer.get_offer_price|floatformat:"2" }}
+                                            {% else %}
+                                                ${{ item.price }}
+                                            {% endif %}
+                                        </td>
                                         <td class="align-middle text-right"><strong>${{ item.get_cost }}</strong></td>
                                     </tr>
                                     {% endfor %}
