@@ -89,20 +89,16 @@
                             </h5>
                             <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:10 }}</p>
                             <div class="d-flex justify-content-between align-items-center mt-auto">
-                                <strong class="text-primary">${{ product.price }}</strong>
-                                <form action="{% url 'cart:cart_add' product.id %}" method="post" class="d-flex align-items-center" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {this.querySelector('button[type=submit]').innerHTML = '<span class=\'icon-check\'></span>'; setTimeout(() => this.querySelector('button[type=submit]').innerHTML = '<span class=\'icon-shopping_cart\'></span>', 1500);});">
-                                    {% csrf_token %}
-                                    <div class="btn-group btn-group-sm mr-2" role="group">
-                                        <button class="btn btn-outline-secondary py-0 px-2" type="button" onclick="var input = this.parentElement.querySelector('input'); if(input.value > 1) input.value = parseInt(input.value) - 1;">-</button>
-                                        <input type="text" name="quantity" class="form-control form-control-sm text-center border-left-0 border-right-0 py-0" style="width: 40px; -moz-appearance: textfield;" value="1" readonly>
-                                        <button class="btn btn-outline-secondary py-0 px-2" type="button" onclick="var input = this.parentElement.querySelector('input'); if(input.value < 99) input.value = parseInt(input.value) + 1;">+</button>
-                                    </div>
-                                    <input type="hidden" name="override" value="False">
-                                    <button type="submit" class="btn btn-primary btn-sm py-1 px-2" title="Añadir al carrito">
-                                        <span class="icon-shopping_cart"></span>
-                                    </button>
-                                </form>
-                            </div>
+                                    {% if product.offer_price and product.offer_price < product.price %}
+                                        <div>
+                                            <h5 class="text-primary mb-0">${{ product.offer_price }}</h5>
+                                            <small class="text-muted"><del>${{ product.price }}</del></small>
+                                        </div>
+                                        <span class="badge badge-warning">Oferta</span>
+                                    {% else %}
+                                        <strong class="text-primary">${{ product.price }}</strong>
+                                    {% endif %}
+                                </div>
                         </div>
                     </div>
                 </div>

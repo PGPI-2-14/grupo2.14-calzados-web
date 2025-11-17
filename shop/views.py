@@ -1,6 +1,10 @@
 from django.shortcuts import render, get_object_or_404
 from cart.forms import CartAddProductForm
 from .models import Category, Product, ProductSize
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+
 
 # from django.views import generic
 
@@ -99,3 +103,31 @@ def home(request):
     all_products = Product.objects.filter(available=True)
     featured_products = list(all_products)[:8]
     return render(request, 'shop/home.html', {'products': featured_products})
+
+def about(request):
+    """About Us page"""
+    return render(request, 'shop/about.html')
+
+def contact(request):
+    """Contact page with form"""
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+        
+        if name and email and message:
+            try:
+                send_mail(
+                    f'Nuevo mensaje de contacto de {name}',
+                    message,
+                    email,
+                    [settings.DEFAULT_FROM_EMAIL],
+                    fail_silently=False,
+                )
+                messages.success(request, '¡Mensaje enviado correctamente!')
+            except Exception as e:
+                messages.error(request, f'Error al enviar el mensaje: {str(e)}')
+        else:
+            messages.error(request, 'Por favor, completa todos los campos.')
+    
+    return render(request, 'shop/contact.html')

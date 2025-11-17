@@ -1,0 +1,59 @@
+{% extends "shop/base/base.html" %}
+{% block title %}Sobre Nosotros{% endblock %}
+{% block content %}
+<div class="bg-light py-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0">
+        <a href="{% url 'shop:product_list' %}">Menú Principal</a>
+        <span class="mx-2 mb-0">/</span>
+        <strong class="text-black">Sobre Nosotros</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section">
+  <div class="container">
+    <div class="row mb-5">
+      <div class="col-md-8 mb-5">
+        <h2 class="mb-4">Sobre Nosotros</h2>
+        <p class="mb-4">
+          Bienvenido a nuestro sitio de calzados. Somos una empresa dedicada a ofrecer los mejores
+          zapatos y accesorios de calidad para toda la familia.
+        </p>
+        <p class="mb-4">
+          Con más de 10 años de experiencia en el mercado, nos hemos comprometido a proporcionar
+          productos de excelente calidad a precios accesibles.
+        </p>
+        <h4 class="mb-3">Nuestra Misión</h4>
+        <p class="mb-4">
+          Proporcionar calzado de calidad que combine estilo, comodidad y durabilidad para satisfacer
+          las necesidades de nuestros clientes.
+        </p>
+        <h4 class="mb-3">Nuestros Valores</h4>
+        <ul class="mb-4">
+          <li><strong>Calidad:</strong> Seleccionamos los mejores productos</li>
+          <li><strong>Servicio:</strong> Atención al cliente de primera clase</li>
+          <li><strong>Confianza:</strong> Transparencia en todas nuestras operaciones</li>
+          <li><strong>Innovación:</strong> Siempre buscamos las últimas tendencias</li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">¿Por qué elegirnos?</h5>
+            <ul class="list-unstyled">
+              <li class="mb-2"><span class="icon-check_circle text-success mr-2"></span>Productos de calidad garantizada</li>
+              <li class="mb-2"><span class="icon-check_circle text-success mr-2"></span>Envíos rápidos y seguros</li>
+              <li class="mb-2"><span class="icon-check_circle text-success mr-2"></span>Atención al cliente 24/7</li>
+              <li class="mb-2"><span class="icon-check_circle text-success mr-2"></span>Garantía de satisfacción</li>
+              <li class="mb-2"><span class="icon-check_circle text-success mr-2"></span>Devoluciones fáciles</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
