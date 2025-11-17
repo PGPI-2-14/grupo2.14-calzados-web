@@ -242,13 +242,18 @@ def _matches(obj: Any, filters: Dict[str, Any]) -> bool:
     for k, v in filters.items():
         if '__' in k:
             field, op = k.split('__', 1)
-            val = getattr(obj, field)
+            val = getattr(obj, field, None)
+
             if op == 'in':
-                return any(str(val) == str(x) if field == 'id' else val == x for x in v)
+                if val not in v:
+                    return False
+            elif op == 'icontains':
+                if not isinstance(val, str) or v.lower() not in val.lower():
+                    return False
             else:
                 return False
         else:
-            val = getattr(obj, k)
+            val = getattr(obj, k, None)
             if hasattr(val, 'id') and hasattr(v, 'id'):
                 if val.id != v.id:
                     return False

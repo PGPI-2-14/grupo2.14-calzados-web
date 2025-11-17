@@ -33,13 +33,13 @@ def product_list(request, category_slug=None):
         products = products.filter(category=category)
     
     if selected_brand:
-        products = [p for p in products if p.brand and p.brand.name == selected_brand]
+        products = products.filter(brand__name=selected_brand)
     
     if selected_color:
-        products = [p for p in products if p.color == selected_color]
+        products = products.filter(color=selected_color)
     
     if selected_material:
-        products = [p for p in products if p.material == selected_material]
+        products = products.filter(material=selected_material)
     
     all_products = Product.objects.filter(available=True)
     brands = list(set([p.brand.name for p in all_products if p.brand]))
@@ -131,3 +131,16 @@ def contact(request):
             messages.error(request, 'Por favor, completa todos los campos.')
     
     return render(request, 'shop/contact.html')
+
+
+def product_search(request):
+    query = request.GET.get('q', '')
+    products = Product.objects.filter(available=True)
+    
+    if query:
+        products = products.filter(name__icontains=query)    
+    context = {
+        'products': products,
+        'search_query': query
+    }
+    return render(request, 'shop/product/list.html', context)

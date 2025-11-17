@@ -4,6 +4,23 @@
 {% if category %}{{ category.name }}{% else %}Products{% endif %}
 {% endblock %}
 {% block content %}
+{% if search_query %}
+<div class="bg-light py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Resultados de búsqueda para: <strong>"{{ search_query }}"</strong></h3>
+                {% if products %}
+                    <p class="text-muted">Se encontraron {{ products|length }} producto(s)</p>
+                {% else %}
+                    <p class="text-muted">No se encontraron productos que coincidan con tu búsqueda.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="bg-light py-3">
     <div class="container">
         <div class="row">
@@ -109,7 +126,7 @@
                                     {% for c in categories %}
                                     <li class="list-group-item px-0 py-1">
                                         <a href="?category={{ c.slug }}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
-                                            <span>{{ c.name }} {% if category.slug == c.slug %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                            <span>{{ c.name }} {% if category and category.slug == c.slug %}<span class="icon-check text-primary"></span>{% endif %}</span>
                                         </a>
                                     </li>
                                     {% endfor %}

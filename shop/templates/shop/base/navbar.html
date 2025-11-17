@@ -1,12 +1,12 @@
-    <header class="site-navbar" role="banner">
+<header class="site-navbar" role="banner">
         <div class="site-navbar-top">
             <div class="container">
                 <div class="row align-items-center">
 
                     <div class="col-6 col-md-4 order-2 order-md-1 site-search-icon text-left">
-                        <form action="" class="site-block-top-search">
+                        <form action="{% url 'shop:product_search' %}" method="get" class="site-block-top-search">
                             <span class="icon icon-search2"></span>
-                            <input type="text" class="form-control border-0" placeholder="Search">
+                            <input type="text" name="q" class="form-control border-0" placeholder="Search" value="{{ request.GET.q }}">
                         </form>
                     </div>
 
