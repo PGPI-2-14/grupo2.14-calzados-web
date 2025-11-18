@@ -107,7 +107,9 @@ Confirmación de Pedido
                         </p>
                     </div>
                 </div>
-                
+                <a id="email-download-link" href="{% url 'order:email_download' order.id %}" download class="btn btn-outline-secondary btn-block mb-2">
+                     Descargar copia del email
+                </a>
                 <a href="{% url 'shop:product_list' %}" class="btn btn-primary btn-block mt-4">
                     Volver a la Tienda
                 </a>
