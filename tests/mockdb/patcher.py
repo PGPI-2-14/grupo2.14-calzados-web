@@ -283,6 +283,138 @@ def save_products_to_fixture() -> None:
     print(f"[mockdb] 💾 Guardados {len(items)} productos en {path}")
 
 
+def save_orders_to_fixture() -> None:
+    """Vuelca el estado actual de Order.objects a tests/mockdb/data/orders.json.
+    También guarda order_items.json separadamente con save_order_items_to_fixture().
+    """
+    from order.models import Order
+
+    base = Path(settings.BASE_DIR)
+    if base.name == "config":
+        base = base.parent
+    data_dir = base / "tests" / "mockdb" / "data"
+    path = data_dir / "orders.json"
+
+    def to_dict(o: Any) -> Dict[str, Any]:
+        d: Dict[str, Any] = {
+            "id": int(getattr(o, 'id', 0) or 0),
+            "customer": int(getattr(getattr(o, 'customer', None), 'id', 0) or 0) or None,
+            "order_number": str(getattr(o, 'order_number', '')),
+            "status": str(getattr(o, 'status', 'pending')),
+            "subtotal": str(getattr(o, 'subtotal', '0')),
+            "taxes": str(getattr(o, 'taxes', '0')),
+            "shipping_cost": str(getattr(o, 'shipping_cost', '0')),
+            "discount": str(getattr(o, 'discount', '0')),
+            "total": str(getattr(o, 'total', '0')),
+            "paid": bool(getattr(o, 'paid', False)),
+            "shipping_method": str(getattr(o, 'shipping_method', '')),
+            "first_name": str(getattr(o, 'first_name', '')),
+            "last_name": str(getattr(o, 'last_name', '')),
+            "email": str(getattr(o, 'email', '')),
+            "address": str(getattr(o, 'address', '')),
+            "postal_code": str(getattr(o, 'postal_code', '')),
+            "city": str(getattr(o, 'city', '')),
+            "payment_method": str(getattr(o, 'payment_method', '')),
+            "shipping_address": str(getattr(o, 'shipping_address', '')),
+            "phone": str(getattr(o, 'phone', '')),
+        }
+        return d
+
+    items = [to_dict(o) for o in Order.objects.all()]
+    data_dir.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, indent=2)
+    print(f"[mockdb] 💾 Guardados {len(items)} pedidos en {path}")
+
+
+def save_order_items_to_fixture() -> None:
+    """Vuelca OrderItem.objects a tests/mockdb/data/order_items.json."""
+    from order.models import OrderItem
+
+    base = Path(settings.BASE_DIR)
+    if base.name == "config":
+        base = base.parent
+    data_dir = base / "tests" / "mockdb" / "data"
+    path = data_dir / "order_items.json"
+
+    def to_dict(oi: Any) -> Dict[str, Any]:
+        return {
+            "id": int(getattr(oi, 'id', 0) or 0),
+            "order": int(getattr(getattr(oi, 'order', None), 'id', 0) or 0) or None,
+            "product": int(getattr(getattr(oi, 'product', None), 'id', 0) or 0),
+            "price": str(getattr(oi, 'price', '0')),
+            "quantity": int(getattr(oi, 'quantity', 0) or 0),
+        }
+
+    items = [to_dict(oi) for oi in OrderItem.objects.all()]
+    data_dir.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, indent=2)
+    print(f"[mockdb] 💾 Guardadas {len(items)} líneas de pedido en {path}")
+
+
+def save_customers_to_fixture() -> None:
+    """Vuelca Customer.objects a tests/mockdb/data/customers.json."""
+    from order.models import Customer
+
+    base = Path(settings.BASE_DIR)
+    if base.name == "config":
+        base = base.parent
+    data_dir = base / "tests" / "mockdb" / "data"
+    path = data_dir / "customers.json"
+
+    def to_dict(c: Any) -> Dict[str, Any]:
+        return {
+            "id": int(getattr(c, 'id', 0) or 0),
+            "first_name": str(getattr(c, 'first_name', '')),
+            "last_name": str(getattr(c, 'last_name', '')),
+            "email": str(getattr(c, 'email', '')),
+            "phone": str(getattr(c, 'phone', '')),
+            "address": str(getattr(c, 'address', '')),
+            "city": str(getattr(c, 'city', '')),
+            "postal_code": str(getattr(c, 'postal_code', '')),
+        }
+
+    items = [to_dict(c) for c in Customer.objects.all()]
+    data_dir.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, indent=2)
+    print(f"[mockdb] 💾 Guardados {len(items)} clientes en {path}")
+
+
+def save_user_accounts_to_fixture() -> None:
+    """Vuelca UserAccount.objects a tests/mockdb/data/users.json.
+    Útil para persistir altas/bajas/cambios de usuarios (admins o customers) desde el admin-lite.
+    """
+    try:
+        from accounts.models import UserAccount
+    except Exception:
+        return
+
+    base = Path(settings.BASE_DIR)
+    if base.name == "config":
+        base = base.parent
+    data_dir = base / "tests" / "mockdb" / "data"
+    path = data_dir / "users.json"
+
+    def to_dict(u: Any) -> Dict[str, Any]:
+        return {
+            "id": int(getattr(u, 'id', 0) or 0),
+            "email": str(getattr(u, 'email', '')),
+            "password_hash": str(getattr(u, 'password_hash', '')),
+            "role": str(getattr(u, 'role', 'customer')),
+            "first_name": str(getattr(u, 'first_name', '')),
+            "last_name": str(getattr(u, 'last_name', '')),
+            "is_active": bool(getattr(u, 'is_active', True)),
+        }
+
+    items = [to_dict(u) for u in UserAccount.objects.all()]
+    data_dir.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, indent=2)
+    print(f"[mockdb] 💾 Guardados {len(items)} usuarios en {path}")
+
+
 def load_default_data() -> Dict[str, List[Dict[str, Any]]]:
     # --- Determinar ruta base del proyecto ---
     base = Path(settings.BASE_DIR)
@@ -317,7 +449,7 @@ def load_default_data() -> Dict[str, List[Dict[str, Any]]]:
         "cart_items": load("cart_items"),
         "order_items": load("order_items"),
         "orders": load("orders"),
-        # "users": load("users"),  # deprecado
+            "users": load("users"),  # soporte opcional de usuarios completos
     }
     print(
         f"[mockdb] Datos cargados: {{ cats: {len(data['categories'])}, brands: {len(data['brands'])}, products: {len(data['products'])}, imgs: {len(data['product_images'])}, sizes: {len(data['product_sizes'])}, admin: {len(data['admin'])}, customers: {len(data['customers'])}, carts: {len(data['carts'])}, cart_items: {len(data['cart_items'])}, order_items: {len(data['order_items'])} }}"
