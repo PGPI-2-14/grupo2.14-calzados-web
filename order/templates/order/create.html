@@ -22,62 +22,138 @@ Checkout
     <div class="container">
         <div class="row mb-5">
             <div class="col-lg-7">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h3 class="h5 text-uppercase mb-4 font-weight-bold">Información de envío</h3>
-                        <form action="." method="post">
-                            {% csrf_token %}
-                            {{ form|crispy }}
-                            <button type="submit" class="btn btn-primary btn-lg btn-block py-3 mt-3">
-                                <span class="icon-check mr-2"></span>Confirmar pedido
-                            </button>
-                        </form>
+                <form method="post" class="needs-validation">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
                     </div>
-                </div>
+                    {% endif %}
+                    
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Método de Entrega</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for value, label in form.shipping_method.field.choices %}
+                                <div class="custom-control custom-radio mb-3">
+                                    <input type="radio" class="custom-control-input" id="shipping_{{ value }}" name="shipping_method" value="{{ value }}" {% if form.shipping_method.value == value %}checked{% endif %} required>
+                                    <label class="custom-control-label" for="shipping_{{ value }}">
+                                        {{ label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Método de Pago</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for value, label in form.payment_method.field.choices %}
+                                <div class="custom-control custom-radio mb-3">
+                                    <input type="radio" class="custom-control-input" id="payment_{{ value }}" name="payment_method" value="{{ value }}" {% if form.payment_method.value == value %}checked{% endif %} required>
+                                    <label class="custom-control-label" for="payment_{{ value }}">
+                                        {{ label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Datos Personales</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}<small class="text-danger">{{ form.first_name.errors }}</small>{% endif %}
+                                </div>
+                                <div class="form-group col-md-6">
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}<small class="text-danger">{{ form.last_name.errors }}</small>{% endif %}
+                                </div>
+                            </div>
+                            {{ form.email }}
+                            {% if form.email.errors %}<small class="text-danger">{{ form.email.errors }}</small>{% endif %}
+                            {{ form.phone }}
+                            {% if form.phone.errors %}<small class="text-danger">{{ form.phone.errors }}</small>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm mb-4" id="address-section" style="display:none;">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Dirección de Envío</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ form.address }}
+                            {% if form.address.errors %}<small class="text-danger">{{ form.address.errors }}</small>{% endif %}
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    {{ form.city }}
+                                    {% if form.city.errors %}<small class="text-danger">{{ form.city.errors }}</small>{% endif %}
+                                </div>
+                                <div class="form-group col-md-6">
+                                    {{ form.postal_code }}
+                                    {% if form.postal_code.errors %}<small class="text-danger">{{ form.postal_code.errors }}</small>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg btn-block py-3">
+                        Continuar
+                    </button>
+                </form>
+                
+                <script>
+                    function toggleAddressSection() {
+                        const shippingMethod = document.querySelector('input[name="shipping_method"]:checked').value;
+                        const addressSection = document.getElementById('address-section');
+                        if (shippingMethod === 'home') {
+                            addressSection.style.display = 'block';
+                        } else {
+                            addressSection.style.display = 'none';
+                        }
+                    }
+                    
+                    document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
+                        radio.addEventListener('change', toggleAddressSection);
+                    });
+                    
+                    // Initialize on page load
+                    toggleAddressSection();
+                </script>
             </div>
 
             <div class="col-lg-5">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h3 class="h5 text-uppercase mb-4 font-weight-bold">Resumen del pedido</h3>
-                        <div style="max-height: 350px; overflow-y: auto;" class="mb-3">
-                            <table class="table table-sm mb-0">
-                                <tbody>
-                                    {% for item in cart %}
-                                    <tr>
-                                        <td class="align-middle" style="width: 60px;">
-                                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="img-fluid rounded" style="width: 50px; height: 50px; object-fit: cover;">
-                                        </td>
-                                        <td class="align-middle">
-                                            <div class="small">{{ item.product.name }}</div>
-                                            <span class="badge badge-secondary">{{ item.quantity }}x</span>
-                                        </td>
-                                        <td class="align-middle text-right">
-                                            {% if item.product.offer %}
-                                                <span class="text-muted"><small><strike>${{ item.price }}</strike></small></span><br>
-                                                ${{ item.product.offer.get_offer_price|floatformat:"2" }}
-                                            {% else %}
-                                                ${{ item.price }}
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <h3 class="h5 text-uppercase mb-4 font-weight-bold">Resumen del Pedido</h3>
+                        {% for item in cart %}
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <span>{{ item.product.name|default:"Producto eliminado" }} x {{ item.quantity }}</span>
+                            <span>${{ item.total_price|floatformat:"2" }}</span>
                         </div>
-                        <div class="border-top pt-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Subtotal</span>
-                                <span>${{ cart.get_total_price|floatformat:"2" }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
-                                <span class="text-muted">Envío</span>
-                                <span>Gratis</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <strong class="h5 mb-0">Total</strong>
-                                <strong class="h5 mb-0">${{ cart.get_total_price|floatformat:"2" }}</strong>
-                            </div>
+                        {% endfor %}
+                        
+                        <div class="d-flex justify-content-between mb-4 pb-3 border-bottom">
+                            <strong>Subtotal:</strong>
+                            <strong id="subtotal">${{ cart.get_total_price|floatformat:"2" }}</strong>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2 pb-3 border-bottom">
+                            <span>Envío:</span>
+                            <span id="shipping-cost">$0.00</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between font-weight-bold" style="font-size: 1.2em;">
+                            <span>Total:</span>
+                            <span id="total-cost">${{ cart.get_total_price|floatformat:"2" }}</span>
                         </div>
                     </div>
                 </div>
@@ -85,4 +161,34 @@ Checkout
         </div>
     </div>
 </div>
+
+<script>
+    const shippingConfig = {
+        'home': 4.99,
+        'store': 0.0
+    };
+    const FREE_SHIPPING_THRESHOLD = 50.0;
+    const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace('$', ''));
+    
+    function updateShippingCost() {
+        const shippingMethod = document.querySelector('input[name="shipping_method"]:checked').value;
+        let shippingCost = 0;
+        
+        if (shippingMethod === 'home') {
+            shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 4.99;
+        } else if (shippingMethod === 'store') {
+            shippingCost = 0;
+        }
+        
+        const total = subtotal + shippingCost;
+        document.getElementById('shipping-cost').textContent = '$' + shippingCost.toFixed(2);
+        document.getElementById('total-cost').textContent = '$' + total.toFixed(2);
+    }
+    
+    document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
+        radio.addEventListener('change', updateShippingCost);
+    });
+    
+    updateShippingCost();
+</script>
 {% endblock %}

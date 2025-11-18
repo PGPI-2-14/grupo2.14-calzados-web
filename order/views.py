@@ -1,8 +1,11 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from cart.cart import Cart
 from .models import Order, OrderItem
 from .forms import OrderCreateForm
+from .shipping import compute_shipping, method_name
+from decimal import Decimal
+import uuid
 from .shipping import compute_shipping
 import braintree
 from config.braintreeSettings import BRAINTREE_CONF
@@ -21,9 +24,6 @@ def order_create(request):
         form = OrderCreateForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            subtotal = float(cart.get_total_price())
-            shipping_cost = compute_shipping(subtotal, 'home')
-            total = subtotal + shipping_cost
             
             # No forzar id: el FakeManager asigna un id único evitando duplicados
             next_generated_id = getattr(Order.objects, '_next_id', 1)
@@ -36,18 +36,47 @@ def order_create(request):
                 city=cd['city'],
                 order_number=_generate_order_number(next_generated_id),
                 status='pending',
-                subtotal=str(subtotal),
-                shipping_cost=str(shipping_cost),
+                subtotal=str('0'),
+                shipping_cost=str('0'),
                 shipping_method='home',
                 taxes='0',
                 discount='0',
-                total=str(total),
+                total=str('0'),
                 paid=False,
             )
+            # Calculate totals
+            subtotal = Decimal('0.00')
             for item in cart:
-                OrderItem.objects.create(order=order, product=item['product'], price=item['price'], quantity=item['quantity'])
+                subtotal += Decimal(str(item['price'])) * item['quantity']
+            
+            shipping_cost = Decimal(str(compute_shipping(float(subtotal), order.shipping_method)))
+            
+            order.subtotal = subtotal
+            order.shipping_cost = shipping_cost
+            order.total = subtotal + shipping_cost
+            order = form.save(commit=False)            
+            
+            # Create order items
+            for item in cart:
+                product = item['product']
+                if product:
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        price=item['price'],
+                        quantity=item['quantity'],
+                        size=item.get('size')
+                    )
+            
             cart.clear()
-            # Redirect to payment page
+            
+            # If no payment required, go directly to confirmation
+            if not order.is_payment_required():
+                order.paid = True
+                order.save()
+                return redirect('order:order_created', order.id)
+            
+            # Otherwise go to payment
             return redirect('order:payment_process', order.id)
     else:
         form = OrderCreateForm()
