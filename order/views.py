@@ -38,11 +38,13 @@ def order_create(request):
                 status='pending',
                 subtotal=str('0'),
                 shipping_cost=str('0'),
-                shipping_method='home',
+                shipping_method=cd.get('shipping_method') or 'home',
                 taxes='0',
                 discount='0',
                 total=str('0'),
                 paid=False,
+                payment_method=cd.get('payment_method') or '',
+                phone=cd.get('phone') or '',
             )
             # Calculate totals
             subtotal = Decimal('0.00')
@@ -54,7 +56,7 @@ def order_create(request):
             order.subtotal = subtotal
             order.shipping_cost = shipping_cost
             order.total = subtotal + shipping_cost
-            order = form.save(commit=False)            
+            # No llamar a form.save(commit=False) en MockDB: devuelve instancia ORM sin id
             
             # Create order items
             for item in cart:
@@ -110,8 +112,12 @@ def payment_process(request, order_id):
         try:
             order = Order.objects.get(id=order_id)
         except Exception:
-            data = getattr(Order.objects, '_data', [])
-            order = next((o for o in data if getattr(o, 'id', None) == order_id), None)
+            items = getattr(Order.objects, '_items', [])
+            try:
+                oid = int(order_id)
+            except Exception:
+                oid = order_id
+            order = next((o for o in items if int(getattr(o, 'id', 0) or 0) == oid), None)
             if not order:
                 return render(request, 'order/payment.html', {'error': 'Pedido no encontrado (MockDB).'})
     else:
@@ -157,5 +163,19 @@ def payment_process(request, order_id):
         return render(request, 'order/payment.html', {'order': order, 'client_token': client_token})
 
 def order_created(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    if os.environ.get('USE_MOCKDB') == '1' or getattr(settings, 'USE_MOCKDB', False):
+        # Evitar acceso ORM cuando estamos en MockDB
+        try:
+            order = Order.objects.get(id=order_id)
+        except Exception:
+            items = getattr(Order.objects, '_items', [])
+            try:
+                oid = int(order_id)
+            except Exception:
+                oid = order_id
+            order = next((o for o in items if int(getattr(o, 'id', 0) or 0) == oid), None)
+            if not order:
+                return redirect('shop:product_list')
+    else:
+        order = get_object_or_404(Order, id=order_id)
     return render(request, 'order/created.html', {'order': order})

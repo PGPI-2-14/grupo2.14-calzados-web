@@ -127,6 +127,40 @@ class FakeOrder:
         """
         return None
 
+    def is_payment_required(self) -> bool:
+        """Replica la lógica del modelo real.
+        Requiere pago cuando no es recogida en tienda y el método no es contrareembolso.
+        """
+        # En el dominio: 'store' = recogida en tienda; 'cod' = contrareembolso
+        return (self.shipping_method != 'store') and (self.payment_method != 'cod')
+
+    @property
+    def items(self):
+        """Emula la relación inversa order.items.all() en plantillas.
+        Devuelve un proxy con método .all() que itera los OrderItem cuyo order coincide.
+        """
+        try:
+            from order.models import OrderItem as DjangoOrderItem  # import local para evitar ciclos
+            mgr = getattr(DjangoOrderItem, 'objects', None)
+            raw = []
+            if mgr is not None:
+                data = getattr(mgr, '_items', [])
+                my_id = getattr(self, 'id', None)
+                raw = [x for x in data if (getattr(x, 'order', None) is self) or (getattr(getattr(x, 'order', None), 'id', None) == my_id)]
+
+            class _Rel:
+                def __init__(self, items: List[Any]):
+                    self._items = items
+                def all(self) -> List[Any]:
+                    return list(self._items)
+
+            return _Rel(raw)
+        except Exception:
+            class _Empty:
+                def all(self) -> List[Any]:
+                    return []
+            return _Empty()
+
 
 @dataclass
 class FakeCustomer:
