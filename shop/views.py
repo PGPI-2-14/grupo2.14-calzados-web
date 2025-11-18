@@ -1,46 +1,42 @@
 from django.shortcuts import render, get_object_or_404
 from cart.forms import CartAddProductForm
-from .models import Category, Product, ProductSize
+from .models import Category, Product, ProductSize, Brand
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib import messages
-
-
-# from django.views import generic
-
-# class IndexView(generic.ListView):
-#     template_name = 'shop/index.html'
-#     context_object_name = 'products'
-
-#     def get_queryset(self):
-#         '''Return five lattest products
-#         '''
-#         return Product.objects.filter(created__lte=timezone.now()
-#         ).order_by('-created')[:5]
-
 
 
 def product_list(request, category_slug=None):
     category = None
     categories = Category.objects.all()
     products = Product.objects.filter(available=True)
-    selected_brand = request.GET.get('brand')
-    selected_color = request.GET.get('color')
-    selected_material = request.GET.get('material')
     
+    # Get multiple values for each filter using getlist
+    selected_brands = request.GET.getlist('brand')
+    selected_colors = request.GET.getlist('color')
+    selected_materials = request.GET.getlist('material')
+    
+    # Category filter (single selection)
     if category_slug:
         category = get_object_or_404(Category, slug=category_slug)
         products = products.filter(category=category)
     
-    if selected_brand:
-        products = products.filter(brand__name=selected_brand)
+    # Brand filter (multiple selection) - Fixed to work with Brand model
+    if selected_brands:
+        # Filter by brand name or ID
+        brand_objects = Brand.objects.filter(name__in=selected_brands)
+        if brand_objects:
+            products = products.filter(brand__in=brand_objects)
     
-    if selected_color:
-        products = products.filter(color=selected_color)
+    # Color filter (multiple selection)
+    if selected_colors:
+        products = products.filter(color__in=selected_colors)
     
-    if selected_material:
-        products = products.filter(material=selected_material)
+    # Material filter (multiple selection)
+    if selected_materials:
+        products = products.filter(material__in=selected_materials)
     
+    # Get all unique values for filters from ALL available products
     all_products = Product.objects.filter(available=True)
     brands = list(set([p.brand.name for p in all_products if p.brand]))
     colors = list(set([p.color for p in all_products if p.color]))
@@ -53,60 +49,47 @@ def product_list(request, category_slug=None):
         'brands': sorted(brands),
         'colors': sorted(colors),
         'materials': sorted(materials),
-        'selected_brand': selected_brand,
-        'selected_color': selected_color,
-        'selected_material': selected_material,
+        'selected_brands': selected_brands,
+        'selected_colors': selected_colors,
+        'selected_materials': selected_materials,
     }
     return render(request, 'shop/product/list.html', context)
 
 
-# class ProductListView(generic.ListView):
-#     template_name = 'shop/product/list.html'
-
-#     def get_queryset(self):
-#         return Product.objects.filter(available=True)
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         category = None
-#         if category_slug:
-#             category = get_object_or_404(Category, slug=category_slug)
-#         context['category'] = category
-#         context['categories'] = Category.objects.all()
-
-
-
-
-
 def product_detail(request, id, slug):
-    # Usar Product.objects para que en modo MockDB pase por el FakeManager/FakeQuerySet
     product = get_object_or_404(Product.objects, id=id, slug=slug, available=True)
     cart_product_form = CartAddProductForm()
     sizes = list(ProductSize.objects.filter(product=product))
-    context = {'product': product, 'cart_product_form': cart_product_form, 'sizes': sizes}
+    
+    # Check if product has stock but no sizes - make it unavailable
+    has_sizes = len(sizes) > 0
+    has_stock = product.stock > 0
+    is_available = product.available and (has_sizes or has_stock)
+    
+    # If product has stock but no sizes, mark as unavailable
+    if has_stock and not has_sizes:
+        is_available = False
+    
+    context = {
+        'product': product,
+        'cart_product_form': cart_product_form,
+        'sizes': sizes,
+        'is_available': is_available,
+        'has_sizes': has_sizes,
+    }
     return render(request, 'shop/product/detail.html', context)
 
-
-# class ProductDetialView(generic.DetailView):
-
-#     template_name = 'shop/product/detail.html'
-#     model = Product
-#     form_class = CartAddProductForm
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context['products'] = get_object_or_404(Product, 
-#         id=id, slug=slug, available=True)
-#         return context
 
 def home(request):
     all_products = Product.objects.filter(available=True)
     featured_products = list(all_products)[:8]
     return render(request, 'shop/home.html', {'products': featured_products})
 
+
 def about(request):
     """About Us page"""
     return render(request, 'shop/about.html')
+
 
 def contact(request):
     """Contact page with form"""
