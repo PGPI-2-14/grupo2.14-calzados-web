@@ -138,7 +138,7 @@ def product_search(request):
     products = Product.objects.filter(available=True)
     
     if query:
-        products = products.filter(name__icontains=query)    
+        products = products.filterSearch(name__icontains=query)    
     context = {
         'products': products,
         'search_query': query

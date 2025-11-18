@@ -120,6 +120,13 @@ class FakeOrder:
         # Puede ser calculado desde OrderItem externamente si no hay total
         return self.total
 
+    def save(self) -> None:
+        """
+        No-op save to mimic Django model instance behaviour in tests/dev with FakeManager.
+        Modifying the object in-place is sufficient for the fake manager.
+        """
+        return None
+
 
 @dataclass
 class FakeCustomer:
@@ -180,6 +187,10 @@ class FakeQuerySet(Iterable):
 
     def filter(self, **kwargs: Any) -> 'FakeQuerySet':
         filtered = [obj for obj in self._items if _matches(obj, kwargs)]
+        return FakeQuerySet(self._model_class, filtered)
+    
+    def filterSearch(self, **kwargs: Any) -> 'FakeQuerySet':
+        filtered = [obj for obj in self._items if _matches2(obj, kwargs)]
         return FakeQuerySet(self._model_class, filtered)
 
     def get(self, **kwargs: Any) -> Any:
@@ -249,6 +260,30 @@ def _matches(obj: Any, filters: Dict[str, Any]) -> bool:
                 return False
         else:
             val = getattr(obj, k)
+            if hasattr(val, 'id') and hasattr(v, 'id'):
+                if val.id != v.id:
+                    return False
+            else:
+                if val != v:
+                    return False
+    return True
+
+def _matches2(obj: Any, filters: Dict[str, Any]) -> bool:
+    for k, v in filters.items():
+        if '__' in k:
+            field, op = k.split('__', 1)
+            val = getattr(obj, field, None)
+
+            if op == 'in':
+                if val not in v:
+                    return False
+            elif op == 'icontains':
+                if not isinstance(val, str) or v.lower() not in val.lower():
+                    return False
+            else:
+                return False
+        else:
+            val = getattr(obj, k, None)
             if hasattr(val, 'id') and hasattr(v, 'id'):
                 if val.id != v.id:
                     return False
