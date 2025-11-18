@@ -172,7 +172,7 @@
                             </div>
                         </div>
 
-                        <a href="{% url 'shop:product_list' %}{% if category %}{{ category.slug }}/{% endif %}" class="btn btn-outline-danger btn-sm btn-block">
+                        <a href="{% url 'shop:product_list' %}" class="btn btn-outline-danger btn-sm btn-block">
                             <span class="icon-clear mr-1"></span>Limpiar filtros
                         </a>
                     </div>
@@ -204,6 +204,7 @@ document.querySelectorAll('input[type="checkbox"][data-filter-type]').forEach(fu
         params.delete('brand');
         params.delete('color');
         params.delete('material');
+        params.delete('category');
         
         // Add selected filters back
         for (var type in filtersByType) {

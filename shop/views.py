@@ -15,11 +15,18 @@ def product_list(request, category_slug=None):
     selected_brands = request.GET.getlist('brand')
     selected_colors = request.GET.getlist('color')
     selected_materials = request.GET.getlist('material')
+    selected_category = request.GET.get('category')
     
-    # Category filter (single selection)
+    # Category filter - can come from URL slug or query parameter
     if category_slug:
         category = get_object_or_404(Category, slug=category_slug)
         products = products.filter(category=category)
+    elif selected_category:
+        try:
+            category = Category.objects.get(slug=selected_category)
+            products = products.filter(category=category)
+        except Category.DoesNotExist:
+            pass
     
     # Brand filter (multiple selection) - Fixed to work with Brand model
     if selected_brands:
