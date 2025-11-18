@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
+from django.http import HttpResponse
 from cart.cart import Cart
 from .models import Order, OrderItem
 from .forms import OrderCreateForm
-from .shipping import compute_shipping, method_name
-from decimal import Decimal
-import uuid
 from .shipping import compute_shipping
+from .utils import send_order_confirmation, generate_order_ticket_text
+from decimal import Decimal
 import braintree
 from config.braintreeSettings import BRAINTREE_CONF
 import os
@@ -18,14 +18,53 @@ def _mockdb_active():
 def _generate_order_number(next_id: int) -> str:
     return f"MOCK-{next_id:04d}"
 
+def _get_order_from_session(request, key='current_order_id'):
+    """Get the current order ID from session"""
+    return request.session.get(key)
+
+def _set_order_in_session(request, order_id, key='current_order_id'):
+    """Store the current order ID in session"""
+    request.session[key] = order_id
+
+def _clear_order_from_session(request, key='current_order_id'):
+    """Clear the order ID from session"""
+    if key in request.session:
+        del request.session[key]
+
+def _validate_order_flow(request, order_id):
+    """
+    Validate that the user is accessing the order in the correct flow.
+    Returns True if valid, False if they're trying to go back inappropriately.
+    """
+    session_order_id = _get_order_from_session(request)
+    
+    # If there's no order in session, this is likely a back navigation issue
+    if session_order_id is None:
+        return False
+    
+    # Check if the order ID matches
+    try:
+        if int(session_order_id) != int(order_id):
+            return False
+    except (ValueError, TypeError):
+        return False
+    
+    return True
+
 def order_create(request):
     cart = Cart(request)
+    
+    # Check if there's already an order in progress
+    existing_order_id = _get_order_from_session(request)
+    if existing_order_id:
+        # Clear the old order from session if cart is not empty
+        _clear_order_from_session(request)
+    
     if request.method == 'POST':
         form = OrderCreateForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
             
-            # No forzar id: el FakeManager asigna un id único evitando duplicados
             next_generated_id = getattr(Order.objects, '_next_id', 1)
             order = Order.objects.create(
                 first_name=cd['first_name'],
@@ -46,6 +85,7 @@ def order_create(request):
                 payment_method=cd.get('payment_method') or '',
                 phone=cd.get('phone') or '',
             )
+            
             # Calculate totals
             subtotal = Decimal('0.00')
             for item in cart:
@@ -56,7 +96,6 @@ def order_create(request):
             order.subtotal = subtotal
             order.shipping_cost = shipping_cost
             order.total = subtotal + shipping_cost
-            # No llamar a form.save(commit=False) en MockDB: devuelve instancia ORM sin id
             
             # Create order items
             for item in cart:
@@ -70,12 +109,23 @@ def order_create(request):
                         size=item.get('size')
                     )
             
+            # Store order ID in session for validation
+            _set_order_in_session(request, order.id)
+            
             cart.clear()
             
             # If no payment required, go directly to confirmation
             if not order.is_payment_required():
                 order.paid = True
-                order.save()
+                order.status = 'processing'
+                try:
+                    order.save()
+                except:
+                    pass
+                
+                # Send confirmation email
+                send_order_confirmation(order)
+                
                 return redirect('order:order_created', order.id)
             
             # Otherwise go to payment
@@ -86,9 +136,7 @@ def order_create(request):
 
 def _get_braintree_gateway():
     """
-    Lazily build and validate a Braintree gateway. Prefer settings.BRAINTREE_CONF,
-    then fall back to the imported BRAINTREE_CONF. Raise ImproperlyConfigured if
-    credentials are missing.
+    Lazily build and validate a Braintree gateway.
     """
     conf = getattr(settings, 'BRAINTREE_CONF', None) or globals().get('BRAINTREE_CONF', None)
     if not conf:
@@ -107,7 +155,15 @@ def _get_braintree_gateway():
 
 
 def payment_process(request, order_id):
-    # get order (works with mockdb)
+    # Validate order flow
+    if not _validate_order_flow(request, order_id):
+        # User tried to go back or access an invalid order
+        _clear_order_from_session(request)
+        return render(request, 'order/payment_error.html', {
+            'error_message': 'Esta sesión de pago ha expirado o es inválida. Por favor, inicie un nuevo pedido.'
+        })
+    
+    # Get order
     if _mockdb_active():
         try:
             order = Order.objects.get(id=order_id)
@@ -119,11 +175,14 @@ def payment_process(request, order_id):
                 oid = order_id
             order = next((o for o in items if int(getattr(o, 'id', 0) or 0) == oid), None)
             if not order:
-                return render(request, 'order/payment.html', {'error': 'Pedido no encontrado (MockDB).'})
+                _clear_order_from_session(request)
+                return render(request, 'order/payment_error.html', {
+                    'error_message': 'Pedido no encontrado.'
+                })
     else:
         order = get_object_or_404(Order, id=order_id)
 
-    # try to create gateway (render friendly error if config is missing)
+    # Try to create gateway
     try:
         gateway = _get_braintree_gateway()
     except ImproperlyConfigured as e:
@@ -139,9 +198,20 @@ def payment_process(request, order_id):
 
         if result.is_success:
             order.paid = True
+            order.status = 'processing'
             if getattr(result, 'transaction', None) and getattr(result.transaction, 'id', None):
                 order.braintree_id = result.transaction.id
-            order.save()
+            try:
+                order.save()
+            except:
+                pass
+            
+            # Send confirmation email
+            send_order_confirmation(order)
+            
+            # Clear order from session as it's complete
+            _clear_order_from_session(request)
+            
             return redirect('order:order_created', order.id)
         else:
             client_token = None
@@ -163,8 +233,7 @@ def payment_process(request, order_id):
         return render(request, 'order/payment.html', {'order': order, 'client_token': client_token})
 
 def order_created(request, order_id):
-    if os.environ.get('USE_MOCKDB') == '1' or getattr(settings, 'USE_MOCKDB', False):
-        # Evitar acceso ORM cuando estamos en MockDB
+    if _mockdb_active():
         try:
             order = Order.objects.get(id=order_id)
         except Exception:
@@ -178,4 +247,37 @@ def order_created(request, order_id):
                 return redirect('shop:product_list')
     else:
         order = get_object_or_404(Order, id=order_id)
+    
+    # Clear order from session
+    _clear_order_from_session(request)
+    
     return render(request, 'order/created.html', {'order': order})
+
+
+def download_ticket(request, order_id):
+    """
+    Generate and download a text ticket for the order.
+    """
+    if _mockdb_active():
+        try:
+            order = Order.objects.get(id=order_id)
+        except Exception:
+            items = getattr(Order.objects, '_items', [])
+            try:
+                oid = int(order_id)
+            except Exception:
+                oid = order_id
+            order = next((o for o in items if int(getattr(o, 'id', 0) or 0) == oid), None)
+            if not order:
+                return HttpResponse("Pedido no encontrado", status=404)
+    else:
+        order = get_object_or_404(Order, id=order_id)
+    
+    # Generate ticket text
+    ticket_text = generate_order_ticket_text(order)
+    
+    # Create response with text file
+    response = HttpResponse(ticket_text, content_type='text/plain; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="ticket_{getattr(order, "order_number", order.id)}.txt"'
+    
+    return response
