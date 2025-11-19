@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "email": "admin@tienda.local",
+    "password_hash": "",
+    "role": "admin",
+    "first_name": "Admin",
+    "last_name": "Tienda",
+    "is_active": true
+  },
+  {
+    "id": 2,
+    "email": "ana@example.com",
+    "password_hash": "",
+    "role": "customer",
+    "first_name": "Ana",
+    "last_name": "Sanchez",
+    "is_active": true
+  },
+  {
+    "id": 3,
+    "email": "carlos.garcia@example.com",
+    "password_hash": "",
+    "role": "customer",
+    "first_name": "Carlos",
+    "last_name": "García",
+    "is_active": true
+  },
+  {
+    "id": 4,
+    "email": "maria.lopez@example.com",
+    "password_hash": "",
+    "role": "customer",
+    "first_name": "María",
+    "last_name": "López",
+    "is_active": true
+  },
+  {
+    "id": 5,
+    "email": "jose.martinez@example.com",
+    "password_hash": "",
+    "role": "customer",
+    "first_name": "José",
+    "last_name": "Martínez",
+    "is_active": true
+  },
+  {
+    "id": 6,
+    "email": "lucia.fernandez@example.com",
+    "password_hash": "",
+    "role": "customer",
+    "first_name": "Lucía",
+    "last_name": "Fernández",
+    "is_active": true
+  },
+  {
+    "id": 7,
+    "email": "pablofh004@gmail.com",
+    "password_hash": "",
+    "role": "admin",
+    "first_name": "Pablo",
+    "last_name": "Ferrería",
+    "is_active": true
+  }
+]

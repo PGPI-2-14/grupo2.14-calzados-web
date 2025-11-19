@@ -1,88 +1,71 @@
 {% extends "accounts/admin_base.html" %}
 {% load static %}
 
-{% block title %}Dashboard de Ventas{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
-{% block admin_section %}Dashboard de Ventas{% endblock %}
+{% block admin_section %}Dashboard{% endblock %}
 
 {% block admin_content %}
-<div class="row mb-1">
-    <div class="col-md-12">
-        <h2 class="h3 mb-4">Dashboard de Ventas</h2>
-    </div>
-</div>
-
-<!-- Date Range Filter -->
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get" class="row">
-            <div class="col-md-3 mb-3">
-                <label>Fecha Inicio</label>
-                <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label>Fecha Fin</label>
-                <input type="date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label>Periodo</label>
-                <select name="period" class="form-control">
-                    <option value="">Personalizado</option>
-                    <option value="today" {% if request.GET.period == 'today' %}selected{% endif %}>Hoy</option>
-                    <option value="week" {% if request.GET.period == 'week' %}selected{% endif %}>Esta Semana</option>
-                    <option value="month" {% if request.GET.period == 'month' %}selected{% endif %}>Este Mes</option>
-                    <option value="year" {% if request.GET.period == 'year' %}selected{% endif %}>Este Año</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary btn-block">Aplicar Filtros</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <!-- Key Metrics -->
-<div class="d-flex mb-2 justify-content-between gap-3">
-    <div class="flex-fill">
-        <div class="card bg-primary text-white h-100">
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white h-100 shadow">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="mb-0">${{ total_revenue }}</h4>
-                        <p class="mb-0">Ingresos Totales</p>
+                        <h6 class="mb-0 text-uppercase">Ingresos Totales</h6>
+                        <h3 class="mb-0 mt-2">${{ total_revenue|floatformat:2|default:"0.00" }}</h3>
                     </div>
-                    <div class="align-self-center">
-                        <span class="icon-attach_money display-4"></span>
+                    <div>
+                        <span class="icon-attach_money" style="font-size: 3rem; opacity: 0.3;"></span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="flex-fill">
-        <div class="card bg-success text-white h-100">
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white h-100 shadow">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="mb-0">{{ total_orders }}</h4>
-                        <p class="mb-0">Total Pedidos</p>
+                        <h6 class="mb-0 text-uppercase">Total Pedidos</h6>
+                        <h3 class="mb-0 mt-2">{{ total_orders|default:0 }}</h3>
                     </div>
-                    <div class="align-self-center">
-                        <span class="icon-shopping_basket display-4"></span>
+                    <div>
+                        <span class="icon-shopping_basket" style="font-size: 3rem; opacity: 0.3;"></span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="flex-fill">
-        <div class="card bg-info text-white h-100">
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white h-100 shadow">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="mb-0">${{ average_order_value }}</h4>
-                        <p class="mb-0">Ticket Promedio</p>
+                        <h6 class="mb-0 text-uppercase">Pedidos Pendientes</h6>
+                        <h3 class="mb-0 mt-2">{{ pending_orders|default:0 }}</h3>
                     </div>
-                    <div class="align-self-center">
-                        <span class="icon-receipt display-4"></span>
+                    <div>
+                        <span class="icon-pending" style="font-size: 3rem; opacity: 0.3;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white h-100 shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 text-uppercase">Ticket Promedio</h6>
+                        <h3 class="mb-0 mt-2">${{ average_order_value|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                    <div>
+                        <span class="icon-receipt" style="font-size: 3rem; opacity: 0.3;"></span>
                     </div>
                 </div>
             </div>
@@ -91,151 +74,109 @@
 </div>
 
 <div class="row">
-    <!-- Sales Chart -->
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Ventas por Día</h5>
+    <!-- Recent Orders -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Pedidos Recientes</h5>
+                <a href="{% url 'accounts:admin_orders' %}" class="btn btn-sm btn-primary">Ver Todos</a>
             </div>
-            <div class="card-body">
-                <div class="text-center py-5">
-                    <span class="icon-analytics display-1 text-muted"></span>
-                    <h5 class="text-muted mt-3">Gráfico de Ventas</h5>
-                    <p class="text-muted">El gráfico se mostraría aquí con una librería como Chart.js</p>
-                    <!-- Placeholder for sales chart -->
-                    <div class="bg-light rounded p-4">
-                        <div class="row text-center">
-                            <div class="col-3">
-                                <div class="border-right">
-                                    <h6>Lun</h6>
-                                    <p class="text-success">${{ revenue_data.mon|default:"0" }}</p>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="border-right">
-                                    <h6>Mar</h6>
-                                    <p class="text-success">${{ revenue_data.tue|default:"0" }}</p>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <div class="border-right">
-                                    <h6>Mié</h6>
-                                    <p class="text-success">${{ revenue_data.wed|default:"0" }}</p>
-                                </div>
-                            </div>
-                            <div class="col-3">
-                                <h6>Jue</h6>
-                                <p class="text-success">${{ revenue_data.thu|default:"0" }}</p>
-                            </div>
-                        </div>
-                    </div>
+            <div class="card-body p-0">
+                {% if recent_orders %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Número</th>
+                                <th>Cliente</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders|slice:":5" %}
+                            <tr>
+                                <td>{{ order.order_number }}</td>
+                                <td>{{ order.first_name }} {{ order.last_name }}</td>
+                                <td class="font-weight-bold">${{ order.total|floatformat:2 }}</td>
+                                <td>
+                                    {% if order.status == 'delivered' %}
+                                    <span class="badge badge-success">Entregado</span>
+                                    {% elif order.status == 'shipped' %}
+                                    <span class="badge badge-info">Enviado</span>
+                                    {% elif order.status == 'processing' %}
+                                    <span class="badge badge-primary">Procesando</span>
+                                    {% elif order.status == 'cancelled' %}
+                                    <span class="badge badge-danger">Cancelado</span>
+                                    {% else %}
+                                    <span class="badge badge-warning">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'accounts:admin_order_detail' order.id %}" class="btn btn-sm btn-outline-info">
+                                        <span class="icon-visibility"></span>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <span class="icon-inbox" style="font-size: 48px;"></span>
+                    <p class="mt-3">No hay pedidos recientes</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Top Products -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Productos Más Vendidos</h5>
+    <!-- Quick Stats & Actions -->
+    <div class="col-md-4 mb-4">
+        <!-- Quick Actions -->
+        <div class="card shadow mb-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Acciones Rápidas</h5>
             </div>
             <div class="card-body">
-                {% if top_products %}
-                <div class="list-group list-group-flush">
-                    {% for product in top_products %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <div>
-                            <strong>{{ product.name }}</strong>
-                            <br>
-                            <small class="text-muted">{{ product.total_sold }} vendidos</small>
-                        </div>
-                        <span class="badge badge-primary badge-pill">${{ product.total_revenue }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-muted text-center py-3">No hay datos de productos</p>
-                {% endif %}
+                <a href="{% url 'accounts:admin_product_create' %}" class="btn btn-success btn-block mb-2">
+                    <span class="icon-add mr-2"></span>Nuevo Producto
+                </a>
+                <a href="{% url 'accounts:admin_customer_create' %}" class="btn btn-info btn-block mb-2">
+                    <span class="icon-person_add mr-2"></span>Nuevo Cliente
+                </a>
+                <a href="{% url 'accounts:admin_orders' %}?status=pending" class="btn btn-warning btn-block">
+                    <span class="icon-pending mr-2"></span>Ver Pendientes
+                </a>
             </div>
         </div>
 
         <!-- Quick Stats -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0">Resumen Rápido</h5>
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Estadísticas</h5>
             </div>
             <div class="card-body">
                 <div class="list-group list-group-flush">
-                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        Pedidos Pendientes
-                        <span class="badge badge-warning badge-pill">{{ pending_orders }}</span>
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 border-0">
+                        <span><span class="icon-inventory mr-2"></span>Total Productos</span>
+                        <span class="badge badge-primary badge-pill">{{ total_products|default:0 }}</span>
                     </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        Productos sin Stock
-                        <span class="badge badge-danger badge-pill">{{ out_of_stock_products }}</span>
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 border-0">
+                        <span><span class="icon-people mr-2"></span>Total Clientes</span>
+                        <span class="badge badge-info badge-pill">{{ total_customers|default:0 }}</span>
                     </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        Nuevos Clientes (30d)
-                        <span class="badge badge-info badge-pill">{{ new_customers }}</span>
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 border-0">
+                        <span><span class="icon-check_circle mr-2"></span>Pedidos Pagados</span>
+                        <span class="badge badge-success badge-pill">{{ paid_orders|default:0 }}</span>
                     </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        Ingresos del Mes
-                        <span class="badge badge-success badge-pill">${{ monthly_revenue }}</span>
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 border-0">
+                        <span><span class="icon-warning mr-2"></span>Stock Bajo</span>
+                        <span class="badge badge-danger badge-pill">{{ low_stock_products|default:0 }}</span>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Order Status Distribution -->
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Distribución de Estados</h5>
-            </div>
-            <div class="card-body">
-                {% if order_status_distribution %}
-                <div class="list-group list-group-flush">
-                    {% for status in order_status_distribution %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <span>{{ status.status_display }}</span>
-                        <span class="badge badge-{% if status.status == 'completed' %}success{% elif status.status == 'pending' %}warning{% elif status.status == 'cancelled' %}danger{% else %}info{% endif %} badge-pill">
-                            {{ status.count }}
-                        </span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-muted text-center py-3">No hay datos de estados</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Payment Methods -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Métodos de Pago</h5>
-            </div>
-            <div class="card-body">
-                {% if payment_methods_distribution %}
-                <div class="list-group list-group-flush">
-                    {% for method in payment_methods_distribution %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <span>{{ method.method_display }}</span>
-                        <span class="badge badge-light badge-pill">
-                            {{ method.count }} ({{ method.percentage }}%)
-                        </span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-muted text-center py-3">No hay datos de métodos de pago</p>
-                {% endif %}
             </div>
         </div>
     </div>

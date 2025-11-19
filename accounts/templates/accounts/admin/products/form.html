@@ -30,14 +30,13 @@
                     {% for message in messages %}
                     <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                         {{ message }}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
+                        <button type="button" class="close" data-dismiss="alert">
+                            <span>&times;</span>
                         </button>
                     </div>
                     {% endfor %}
                     {% endif %}
 
-                    <!-- Display form errors -->
                     {% if form.errors %}
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         <strong>Por favor corrige los siguientes errores:</strong>
@@ -51,8 +50,8 @@
                                 <li>{{ error }}</li>
                             {% endfor %}
                         </ul>
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
+                        <button type="button" class="close" data-dismiss="alert">
+                            <span>&times;</span>
                         </button>
                     </div>
                     {% endif %}
@@ -78,9 +77,9 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="font-weight-bold">Slug *</label>
-                                <input type="text" class="form-control" name="slug" 
+                                <input type="text" class="form-control" name="slug" id="slug-input"
                                        value="{% if form.slug.value %}{{ form.slug.value }}{% elif product %}{{ product.slug }}{% endif %}" required>
-                                <small class="form-text text-muted">URL amigable para el producto</small>
+                                <small class="form-text text-muted">URL amigable (se genera automáticamente)</small>
                                 {% if form.slug.errors %}
                                 <div class="text-danger small">{{ form.slug.errors }}</div>
                                 {% endif %}
@@ -92,15 +91,22 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="font-weight-bold">Categoría *</label>
-                                <select class="form-control" name="category" required>
-                                    <option value="">Seleccionar categoría</option>
-                                    {% for category in categories %}
-                                    <option value="{{ category.id }}" 
-                                            {% if form.category.value == category.id or product and product.category_id == category.id %}selected{% endif %}>
-                                        {{ category.name }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
+                                <div class="input-group">
+                                    <select class="form-control" name="category" id="category-select" required>
+                                        <option value="">Seleccionar categoría</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}" 
+                                                {% if form.category.value == category.id|stringformat:"i" or product and product.category_id == category.id %}selected{% endif %}>
+                                            {{ category.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#newCategoryModal">
+                                            <span class="icon-add"></span>
+                                        </button>
+                                    </div>
+                                </div>
                                 {% if form.category.errors %}
                                 <div class="text-danger small">{{ form.category.errors }}</div>
                                 {% endif %}
@@ -109,15 +115,22 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="font-weight-bold">Marca</label>
-                                <select class="form-control" name="brand">
-                                    <option value="">Sin marca</option>
-                                    {% for brand in brands %}
-                                    <option value="{{ brand.id }}" 
-                                            {% if form.brand.value == brand.id or product and product.brand_id == brand.id %}selected{% endif %}>
-                                        {{ brand.name }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
+                                <div class="input-group">
+                                    <select class="form-control" name="brand" id="brand-select">
+                                        <option value="">Sin marca</option>
+                                        {% for brand in brands %}
+                                        <option value="{{ brand.id }}" 
+                                                {% if form.brand.value == brand.id|stringformat:"i" or product and product.brand_id == brand.id %}selected{% endif %}>
+                                            {{ brand.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-outline-secondary" data-toggle="modal" data-target="#newBrandModal">
+                                            <span class="icon-add"></span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -168,15 +181,47 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label class="font-weight-bold">Stock *</label>
+                                <label class="font-weight-bold">Stock General *</label>
                                 <input type="number" class="form-control" name="stock" 
                                        value="{% if form.stock.value %}{{ form.stock.value }}{% elif product %}{{ product.stock }}{% else %}0{% endif %}" required>
+                                <small class="form-text text-muted">Para productos sin tallas</small>
                                 {% if form.stock.errors %}
                                 <div class="text-danger small">{{ form.stock.errors }}</div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
+
+                    <!-- Product Sizes -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Tallas del Producto</h5>
+                        </div>
+                    </div>
+
+                    <div id="sizes-container">
+                        {% if sizes %}
+                            {% for size in sizes %}
+                            <div class="row size-row mb-2">
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control" name="sizes[]" placeholder="Talla (ej: 42)" value="{{ size.size }}">
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="number" class="form-control" name="size_stocks[]" placeholder="Stock" value="{{ size.stock }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-danger btn-block remove-size">
+                                        <span class="icon-delete"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <button type="button" id="add-size" class="btn btn-sm btn-success mb-4">
+                        <span class="icon-add mr-1"></span>Añadir Talla
+                    </button>
 
                     <!-- Attributes -->
                     <div class="row mb-4">
@@ -220,21 +265,19 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="font-weight-bold">Imagen Principal</label>
+                        <label class="font-weight-bold">URL de Imagen</label>
                         {% if product and product.image %}
                         <div class="mb-3">
                             <img src="{{ product.image.url }}" alt="Current image" 
                                  class="img-fluid rounded" style="max-height: 200px;">
-                            <div class="form-check mt-2">
-                                <input type="checkbox" class="form-check-input" name="clear_image" id="clear_image">
-                                <label class="form-check-label" for="clear_image">Eliminar imagen actual</label>
-                            </div>
                         </div>
                         {% endif %}
-                        <input type="file" class="form-control-file" name="image" accept="image/*">
-                        <small class="form-text text-muted">Formatos: JPG, PNG, GIF. Tamaño máximo: 5MB</small>
-                        {% if form.image.errors %}
-                        <div class="text-danger small">{{ form.image.errors }}</div>
+                        <input type="text" class="form-control" name="image_url" 
+                               placeholder="/static/img/producto.jpg"
+                               value="{% if form.image_url.value %}{{ form.image_url.value }}{% elif product %}{{ product.image.url }}{% endif %}">
+                        <small class="form-text text-muted">Ruta a la imagen (ej: /static/img/zapatilla.jpg)</small>
+                        {% if form.image_url.errors %}
+                        <div class="text-danger small">{{ form.image_url.errors }}</div>
                         {% endif %}
                     </div>
 
@@ -294,4 +337,128 @@
         </div>
     </div>
 </div>
+
+<!-- New Category Modal -->
+<div class="modal fade" id="newCategoryModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Categoría</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre de la Categoría</label>
+                    <input type="text" class="form-control" id="new-category-name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="save-category">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Brand Modal -->
+<div class="modal fade" id="newBrandModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Marca</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nombre de la Marca</label>
+                    <input type="text" class="form-control" id="new-brand-name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="save-brand">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-generate slug from name
+document.querySelector('input[name="name"]').addEventListener('input', function(e) {
+    const slugInput = document.getElementById('slug-input');
+    if (!slugInput.dataset.manuallyEdited) {
+        slugInput.value = e.target.value
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+});
+
+document.getElementById('slug-input').addEventListener('input', function() {
+    this.dataset.manuallyEdited = 'true';
+});
+
+// Add size row
+document.getElementById('add-size').addEventListener('click', function() {
+    const container = document.getElementById('sizes-container');
+    const row = document.createElement('div');
+    row.className = 'row size-row mb-2';
+    row.innerHTML = `
+        <div class="col-md-5">
+            <input type="text" class="form-control" name="sizes[]" placeholder="Talla (ej: 42)">
+        </div>
+        <div class="col-md-5">
+            <input type="number" class="form-control" name="size_stocks[]" placeholder="Stock" value="0">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-danger btn-block remove-size">
+                <span class="icon-delete"></span>
+            </button>
+        </div>
+    `;
+    container.appendChild(row);
+});
+
+// Remove size row
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-size') || e.target.parentElement.classList.contains('remove-size')) {
+        const row = e.target.closest('.size-row');
+        if (row) row.remove();
+    }
+});
+
+// Save new category
+document.getElementById('save-category').addEventListener('click', function() {
+    const name = document.getElementById('new-category-name').value.trim();
+    if (name) {
+        const select = document.getElementById('category-select');
+        const option = document.createElement('option');
+        option.value = 'new:' + name;
+        option.text = name + ' (Nueva)';
+        option.selected = true;
+        select.appendChild(option);
+        $('#newCategoryModal').modal('hide');
+        document.getElementById('new-category-name').value = '';
+    }
+});
+
+// Save new brand
+document.getElementById('save-brand').addEventListener('click', function() {
+    const name = document.getElementById('new-brand-name').value.trim();
+    if (name) {
+        const select = document.getElementById('brand-select');
+        const option = document.createElement('option');
+        option.value = 'new:' + name;
+        option.text = name + ' (Nueva)';
+        option.selected = true;
+        select.appendChild(option);
+        $('#newBrandModal').modal('hide');
+        document.getElementById('new-brand-name').value = '';
+    }
+});
+</script>
 {% endblock %}

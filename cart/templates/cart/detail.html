@@ -47,18 +47,25 @@ Pago
                                             <span class="text-muted">${{ item.price }}</span>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <form action="{% url "cart:cart_add" product.id %}" method="post" class="d-inline-block">
-                                                {% csrf_token %}
-                                                <div class="input-group" style="max-width: 130px; margin: 0 auto;">
-                                                    {{ item.update_quantity_form.quantity }}
-                                                    {{ item.update_quantity_form.override }}
-                                                    <div class="input-group-append">
-                                                        <button class="btn btn-sm btn-outline-success" type="submit" title="Actualizar cantidad">
-                                                            <span class="icon-system_update"></span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </form>
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <form action="{% url "cart:cart_update_quantity" product.id %}" method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="quantity" value="{{ item.quantity|add:"-1" }}">
+                                                    <input type="hidden" name="size" value="{{ item.size }}">
+                                                    <button class="btn btn-sm btn-outline-secondary" type="submit" {% if item.quantity <= 1 %}disabled{% endif %}>
+                                                        <span>-</span>
+                                                    </button>
+                                                </form>
+                                                <span class="mx-3 font-weight-bold">{{ item.quantity }}</span>
+                                                <form action="{% url "cart:cart_update_quantity" product.id %}" method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="quantity" value="{{ item.quantity|add:"1" }}">
+                                                    <input type="hidden" name="size" value="{{ item.size }}">
+                                                    <button class="btn btn-sm btn-outline-secondary" type="submit">
+                                                        <span>+</span>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                         <td class="align-middle text-center">
                                             <strong>${{ item.total_price }}</strong>

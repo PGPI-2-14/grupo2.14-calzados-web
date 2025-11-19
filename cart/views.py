@@ -18,6 +18,21 @@ def cart_add(request, product_id):
         cart.add(product=product, quantity=cd['quantity'], update_quantity=cd['update'], size=size, price=price)
     return redirect('cart:cart_detail')
 
+@require_POST
+def cart_update_quantity(request, product_id):
+    """Update quantity of a specific product (with size) in cart"""
+    cart = Cart(request)
+    size = request.POST.get('size')
+    quantity = int(request.POST.get('quantity', 1))
+    
+    # Ensure quantity is at least 1
+    if quantity < 1:
+        quantity = 1
+    
+    product = get_object_or_404(Product.objects, id=product_id)
+    cart.add(product=product, quantity=quantity, update_quantity=True, size=size)
+    return redirect('cart:cart_detail')
+
 def cart_remove(request, product_id):
     cart = Cart(request)
     size = request.POST.get('size')
@@ -31,6 +46,5 @@ def cart_clear(request):
 
 def cart_detail(request):
     cart = Cart(request)
-    for item in cart:
-        item['update_quantity_form'] = CartAddProductForm(initial={'quantity': item['quantity'], 'update': True, 'size': item.get('size', '')})
+    # No need to add forms anymore since we use +/- buttons
     return render(request, 'cart/detail.html', {'cart': cart})
