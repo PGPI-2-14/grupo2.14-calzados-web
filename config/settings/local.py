@@ -1,6 +1,18 @@
 """Django settings for config project."""
 
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables desde ambos lugares para compatibilidad:
+# 1) Raíz del repo (padre de 'config')
+# 2) Carpeta 'config' (por compatibilidad con equipos que ya lo usaban)
+_ROOT_DIR = Path(__file__).resolve().parents[2]
+_CONFIG_DIR = Path(__file__).resolve().parent
+
+# Cargar primero raíz y luego config con override=False (no pisa valores ya cargados)
+load_dotenv(_ROOT_DIR / ".env", override=False)
+load_dotenv(_CONFIG_DIR / ".env", override=False)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # PROJECT_DIR es la carpeta raíz del repo (padre de 'config')
@@ -128,3 +140,7 @@ CART_SESSION_ID = 'cart'
 if USE_MOCKDB:
     SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
     print("Sesiones almacenadas en cookies (sin usar tablas SQL).")
+
+# Email (desarrollo): enviar a consola para pruebas
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'no-reply@example.com'

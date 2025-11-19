@@ -4,6 +4,23 @@
 {% if category %}{{ category.name }}{% else %}Products{% endif %}
 {% endblock %}
 {% block content %}
+{% if search_query %}
+<div class="bg-light py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Resultados de búsqueda para: <strong>"{{ search_query }}"</strong></h3>
+                {% if products %}
+                    <p class="text-muted">Se encontraron {{ products|length }} producto(s)</p>
+                {% else %}
+                    <p class="text-muted">No se encontraron productos que coincidan con tu búsqueda.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="bg-light py-3">
     <div class="container">
         <div class="row">
@@ -18,24 +35,6 @@
 
 <div class="site-section">
     <div class="container">
-        {% if user.is_staff %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="alert alert-light border d-flex justify-content-between align-items-center">
-                    <span class="font-weight-bold"><span class="icon-admin_panel_settings mr-2"></span>Panel de administración</span>
-                    <div>
-                        <a href="{% url 'shop:product_create' %}" class="btn btn-success btn-sm mr-2">
-                            <span class="icon-add_circle mr-1"></span>Nuevo Producto
-                        </a>
-                        <a href="{% url 'shop:category_create' %}" class="btn btn-info btn-sm">
-                            <span class="icon-add_circle mr-1"></span>Nueva Categoría
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        
         <div class="row mb-5">
             <div class="col-md-9 order-2">
                 <div class="row mb-5">
@@ -51,44 +50,20 @@
                                 </h5>
                                 <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:15 }}</p>
                                 <div class="d-flex justify-content-between align-items-center mt-auto">
-                                    <strong class="text-primary">${{ product.price }}</strong>
-                                    <form action="{% url 'cart:cart_add' product.id %}" method="post" class="d-flex align-items-center" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {this.querySelector('button[type=submit]').innerHTML = '<span class=\'icon-check\'></span>'; setTimeout(() => this.querySelector('button[type=submit]').innerHTML = '<span class=\'icon-shopping_cart\'></span>', 1500);});">
-                                        {% csrf_token %}
-                                        <div class="btn-group btn-group-sm mr-2" role="group">
-                                            <button class="btn btn-outline-secondary py-0 px-2" type="button" onclick="var input = this.parentElement.querySelector('input'); if(input.value > 1) input.value = parseInt(input.value) - 1;">-</button>
-                                            <input type="text" name="quantity" class="form-control form-control-sm text-center border-left-0 border-right-0 py-0" style="width: 40px; -moz-appearance: textfield;" value="1" readonly>
-                                            <button class="btn btn-outline-secondary py-0 px-2" type="button" onclick="var input = this.parentElement.querySelector('input'); if(input.value < 99) input.value = parseInt(input.value) + 1;">+</button>
+                                    {% if product.offer_price and product.offer_price < product.price %}
+                                        <div>
+                                            <h5 class="text-primary mb-0">${{ product.offer_price }}</h5>
+                                            <small class="text-muted"><del>${{ product.price }}</del></small>
                                         </div>
-                                        <input type="hidden" name="override" value="False">
-                                        <button type="submit" class="btn btn-primary btn-sm py-1 px-2" title="Añadir al carrito">
-                                            <span class="icon-shopping_cart"></span>
-                                        </button>
-                                    </form>
+                                        <span class="badge badge-warning">Oferta</span>
+                                    {% else %}
+                                        <strong class="text-primary">${{ product.price }}</strong>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
-                </div>
-                
-                <div class="row" data-aos="fade-up">
-                    <div class="col-md-12 text-center">
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-center">
-                                <li class="page-item disabled">
-                                    <a class="page-link" href="#" tabindex="-1">&lt;</a>
-                                </li>
-                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                <li class="page-item"><a class="page-link" href="#">4</a></li>
-                                <li class="page-item"><a class="page-link" href="#">5</a></li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#">&gt;</a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
                 </div>
             </div>
 
@@ -98,6 +73,22 @@
                         <h3 class="h6 text-uppercase font-weight-bold mb-3">
                             <span class="icon-filter_list mr-2"></span>Filtrar por
                         </h3>
+                        
+                        <!-- Active Filters Display -->
+                        {% if selected_brands or selected_colors or selected_materials %}
+                        <div class="mb-3 pb-3 border-bottom">
+                            <h6 class="font-weight-bold mb-2">Filtros activos:</h6>
+                            {% for brand in selected_brands %}
+                            <span class="badge badge-primary mr-1 mb-1">{{ brand }}</span>
+                            {% endfor %}
+                            {% for color in selected_colors %}
+                            <span class="badge badge-info mr-1 mb-1">{{ color }}</span>
+                            {% endfor %}
+                            {% for material in selected_materials %}
+                            <span class="badge badge-success mr-1 mb-1">{{ material }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         
                         <div class="filter-section mb-3">
                             <button class="btn btn-link text-dark font-weight-bold w-100 text-left p-0 mb-2" type="button" data-toggle="collapse" data-target="#categoryFilter">
@@ -112,8 +103,8 @@
                                     </li>
                                     {% for c in categories %}
                                     <li class="list-group-item px-0 py-1">
-                                        <a href="?category={{ c.slug }}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
-                                            <span>{{ c.name }} {% if category.slug == c.slug %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        <a href="?category={{ c.slug }}{% for b in selected_brands %}&brand={{ b }}{% endfor %}{% for col in selected_colors %}&color={{ col }}{% endfor %}{% for mat in selected_materials %}&material={{ mat }}{% endfor %}" class="text-decoration-none">
+                                            <span>{{ c.name }} {% if category and category.slug == c.slug %}<span class="icon-check text-primary"></span>{% endif %}</span>
                                         </a>
                                     </li>
                                     {% endfor %}
@@ -129,16 +120,12 @@
                             </button>
                             <div class="collapse" id="brandFilter">
                                 <ul class="list-group list-group-flush">
-                                    <li class="list-group-item px-0 py-1">
-                                        <a href="?{% if category %}category={{ category.slug }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
-                                            <span>Todas {% if not selected_brand %}<span class="icon-check text-primary"></span>{% endif %}</span>
-                                        </a>
-                                    </li>
                                     {% for brand in brands %}
                                     <li class="list-group-item px-0 py-1">
-                                        <a href="?{% if category %}category={{ category.slug }}&{% endif %}brand={{ brand }}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
-                                            <span>{{ brand|title }} {% if selected_brand == brand %}<span class="icon-check text-primary"></span>{% endif %}</span>
-                                        </a>
+                                        <label class="mb-0 d-flex align-items-center cursor-pointer" style="cursor: pointer;">
+                                            <input type="checkbox" class="mr-2" data-filter-type="brand" data-filter-value="{{ brand }}" {% if brand in selected_brands %}checked{% endif %}>
+                                            <span>{{ brand|title }}</span>
+                                        </label>
                                     </li>
                                     {% endfor %}
                                 </ul>
@@ -153,16 +140,12 @@
                             </button>
                             <div class="collapse" id="colorFilter">
                                 <ul class="list-group list-group-flush">
-                                    <li class="list-group-item px-0 py-1">
-                                        <a href="?{% if category %}category={{ category.slug }}{% endif %}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
-                                            <span>Todos {% if not selected_color %}<span class="icon-check text-primary"></span>{% endif %}</span>
-                                        </a>
-                                    </li>
                                     {% for color in colors %}
                                     <li class="list-group-item px-0 py-1">
-                                        <a href="?{% if category %}category={{ category.slug }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}&{% endif %}color={{ color }}{% if selected_material %}&material={{ selected_material }}{% endif %}" class="text-decoration-none">
-                                            <span>{{ color|title }} {% if selected_color == color %}<span class="icon-check text-primary"></span>{% endif %}</span>
-                                        </a>
+                                        <label class="mb-0 d-flex align-items-center cursor-pointer" style="cursor: pointer;">
+                                            <input type="checkbox" class="mr-2" data-filter-type="color" data-filter-value="{{ color }}" {% if color in selected_colors %}checked{% endif %}>
+                                            <span>{{ color|title }}</span>
+                                        </label>
                                     </li>
                                     {% endfor %}
                                 </ul>
@@ -177,32 +160,66 @@
                             </button>
                             <div class="collapse" id="materialFilter">
                                 <ul class="list-group list-group-flush">
-                                    <li class="list-group-item px-0 py-1">
-                                        <a href="?{% if category %}category={{ category.slug }}{% endif %}{% if selected_brand %}&brand={{ selected_brand }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}" class="text-decoration-none">
-                                            <span>Todos {% if not selected_material %}<span class="icon-check text-primary"></span>{% endif %}</span>
-                                        </a>
-                                    </li>
                                     {% for material in materials %}
                                     <li class="list-group-item px-0 py-1">
-                                        <a href="?{% if category %}category={{ category.slug }}&{% endif %}{% if selected_brand %}brand={{ selected_brand }}&{% endif %}{% if selected_color %}color={{ selected_color }}&{% endif %}material={{ material }}" class="text-decoration-none">
-                                            <span>{{ material|title }} {% if selected_material == material %}<span class="icon-check text-primary"></span>{% endif %}</span>
-                                        </a>
+                                        <label class="mb-0 d-flex align-items-center cursor-pointer" style="cursor: pointer;">
+                                            <input type="checkbox" class="mr-2" data-filter-type="material" data-filter-value="{{ material }}" {% if material in selected_materials %}checked{% endif %}>
+                                            <span>{{ material|title }}</span>
+                                        </label>
                                     </li>
                                     {% endfor %}
                                 </ul>
                             </div>
                         </div>
 
-                        {% if selected_brand or selected_color or selected_material %}
-                        <a href="{% url 'shop:product_list' %}{% if category %}{{ category.slug }}/{% endif %}" class="btn btn-outline-danger btn-sm btn-block">
+                        <a href="{% url 'shop:product_list' %}" class="btn btn-outline-danger btn-sm btn-block">
                             <span class="icon-clear mr-1"></span>Limpiar filtros
                         </a>
-                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Multi-select filter handler
+document.querySelectorAll('input[type="checkbox"][data-filter-type]').forEach(function(checkbox) {
+    checkbox.addEventListener('change', function() {
+        var url = new URL(window.location.href);
+        var params = new URLSearchParams(url.search);
+        
+        // Get all checked values for each filter type
+        var filtersByType = {};
+        document.querySelectorAll('input[type="checkbox"][data-filter-type]:checked').forEach(function(cb) {
+            var type = cb.getAttribute('data-filter-type');
+            var value = cb.getAttribute('data-filter-value');
+            if (!filtersByType[type]) {
+                filtersByType[type] = [];
+            }
+            filtersByType[type].push(value);
+        });
+        
+        // Clear all filter parameters
+        params.delete('brand');
+        params.delete('color');
+        params.delete('material');
+        params.delete('category');
+        
+        // Add selected filters back
+        for (var type in filtersByType) {
+            filtersByType[type].forEach(function(value) {
+                params.append(type, value);
+            });
+        }
+        
+        // Preserve category if exists
+        var pathParts = window.location.pathname.split('/');
+        var newUrl = url.origin + url.pathname + '?' + params.toString();
+        
+        window.location.href = newUrl;
+    });
+});
+</script>
 
 {% endblock %}

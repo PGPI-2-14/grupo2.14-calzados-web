@@ -1,0 +1,45 @@
+{% extends "shop/base/base.html" %}
+{% block title %}Error en el Pago{% endblock %}
+{% block content %}
+<div class="bg-light py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 mb-0">
+                <a href="{% url 'shop:product_list' %}">Menú Principal</a> 
+                <span class="mx-2 mb-0">/</span>
+                <strong class="text-black">Error en el Pago</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="site-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-danger">
+                    <div class="card-body text-center py-5">
+                        <div style="font-size: 3em; color: #dc3545; margin-bottom: 15px;">✗</div>
+                        <h2 class="mb-3 text-danger">Error en el Proceso de Pago</h2>
+                        <p class="text-muted mb-4">{{ error_message|default:"Ha ocurrido un error durante el proceso de pago. El pedido ha sido cancelado." }}</p>
+                        
+                        <div class="alert alert-warning" role="alert">
+                            <strong>¿Qué puedo hacer?</strong><br>
+                            Por favor, inicie un nuevo pedido desde el carrito de compras.
+                        </div>
+                        
+                        <div class="mt-4">
+                            <a href="{% url 'cart:cart_detail' %}" class="btn btn-primary btn-lg mr-2">
+                                <span class="icon-shopping_cart mr-2"></span>Ir al Carrito
+                            </a>
+                            <a href="{% url 'shop:product_list' %}" class="btn btn-outline-secondary btn-lg">
+                                <span class="icon-storefront mr-2"></span>Continuar Comprando
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

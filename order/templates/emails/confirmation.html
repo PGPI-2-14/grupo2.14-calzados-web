@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmación de Pedido</title>
+</head>
+<body style="font-family: Arial, sans-serif; color:#222;">
+    <h2>¡Gracias por tu compra!</h2>
+    <p>Hemos recibido tu pedido <strong>{{ order.order_number }}</strong>.</p>
+
+    <h3>Resumen del pedido</h3>
+    <table cellpadding="6" cellspacing="0" border="0" style="border-collapse:collapse;">
+        <thead>
+            <tr>
+                <th align="left">Producto</th>
+                <th align="right">Cantidad</th>
+                <th align="right">Precio</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for it in items %}
+            <tr>
+                <td>{{ it.product.name }}</td>
+                <td align="right">{{ it.quantity }}</td>
+                <td align="right">{{ it.price }} €</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <p>
+        Subtotal: <strong>{{ order.subtotal }} €</strong><br>
+        Gastos de envío: <strong>{{ order.shipping_cost }} €</strong><br>
+        Total: <strong>{{ order.total }} €</strong>
+    </p>
+
+    <h3>Entrega</h3>
+    <p>
+        Método: {{ order.shipping_method|default:"home" }}<br>
+        Dirección: {{ order.shipping_address|default:order.address }} {{ order.postal_code }} {{ order.city }}
+    </p>
+
+    <p>
+        Un saludo,<br>
+        Nexo Shoes
+    </p>
+</body>
+</html>
