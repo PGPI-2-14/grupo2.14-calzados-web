@@ -1,0 +1,272 @@
+{% extends "accounts/admin_base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if customer %}Editar {{ customer.first_name }} {{ customer.last_name }}{% else %}Crear Cliente{% endif %}
+{% endblock %}
+
+{% block admin_section %}
+    {% if customer %}Editar Cliente{% else %}Nuevo Cliente{% endif %}
+{% endblock %}
+
+{% block admin_content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    {% if customer %}
+                        <span class="icon-edit mr-2"></span>Editar Cliente: {{ customer.first_name }} {{ customer.last_name }}
+                    {% else %}
+                        <span class="icon-person_add mr-2"></span>Crear Nuevo Cliente
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- Display form errors -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Por favor corrige los siguientes errores:</strong>
+                        <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endif %}
+
+                    <!-- Personal Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Información Personal</h5>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Nombre *</label>
+                                <input type="text" class="form-control" name="first_name" 
+                                       value="{% if form.first_name.value %}{{ form.first_name.value }}{% elif customer %}{{ customer.first_name }}{% endif %}" required>
+                                {% if form.first_name.errors %}
+                                <div class="text-danger small">{{ form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Apellido *</label>
+                                <input type="text" class="form-control" name="last_name" 
+                                       value="{% if form.last_name.value %}{{ form.last_name.value }}{% elif customer %}{{ customer.last_name }}{% endif %}" required>
+                                {% if form.last_name.errors %}
+                                <div class="text-danger small">{{ form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Email *</label>
+                        <input type="email" class="form-control" name="email" 
+                               value="{% if form.email.value %}{{ form.email.value }}{% elif customer %}{{ customer.email }}{% endif %}" required>
+                        {% if form.email.errors %}
+                        <div class="text-danger small">{{ form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Teléfono</label>
+                        <input type="text" class="form-control" name="phone" 
+                               value="{% if form.phone.value %}{{ form.phone.value }}{% elif customer %}{{ customer.phone }}{% endif %}">
+                        {% if form.phone.errors %}
+                        <div class="text-danger small">{{ form.phone.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Address Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Dirección</h5>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Dirección</label>
+                        <textarea class="form-control" name="address" rows="2">{% if form.address.value %}{{ form.address.value }}{% elif customer %}{{ customer.address }}{% endif %}</textarea>
+                        {% if form.address.errors %}
+                        <div class="text-danger small">{{ form.address.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Ciudad</label>
+                                <input type="text" class="form-control" name="city" 
+                                       value="{% if form.city.value %}{{ form.city.value }}{% elif customer %}{{ customer.city }}{% endif %}">
+                                {% if form.city.errors %}
+                                <div class="text-danger small">{{ form.city.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Código Postal</label>
+                                <input type="text" class="form-control" name="postal_code" 
+                                       value="{% if form.postal_code.value %}{{ form.postal_code.value }}{% elif customer %}{{ customer.postal_code }}{% endif %}">
+                                {% if form.postal_code.errors %}
+                                <div class="text-danger small">{{ form.postal_code.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Settings -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Configuración de Cuenta</h5>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Rol</label>
+                                <select class="form-control" name="role">
+                                    <option value="customer" {% if form.role.value == 'customer' or customer and customer.role == 'customer' %}selected{% endif %}>Cliente</option>
+                                    <option value="admin" {% if form.role.value == 'admin' or customer and customer.role == 'admin' %}selected{% endif %}>Administrador</option>
+                                </select>
+                                {% if form.role.errors %}
+                                <div class="text-danger small">{{ form.role.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Estado</label>
+                                <select class="form-control" name="is_active">
+                                    <option value="true" {% if form.is_active.value == 'true' or form.is_active.value == True or customer and customer.is_active %}selected{% endif %}>Activo</option>
+                                    <option value="false" {% if form.is_active.value == 'false' or form.is_active.value == False or customer and not customer.is_active %}selected{% endif %}>Inactivo</option>
+                                </select>
+                                {% if form.is_active.errors %}
+                                <div class="text-danger small">{{ form.is_active.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not customer %}
+                    <!-- Password Section for New Customers -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Contraseña</h5>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Contraseña *</label>
+                                <input type="password" class="form-control" name="password" required>
+                                <small class="form-text text-muted">La contraseña debe tener al menos 8 caracteres</small>
+                                {% if form.password.errors %}
+                                <div class="text-danger small">{{ form.password.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Confirmar Contraseña *</label>
+                                <input type="password" class="form-control" name="password_confirm" required>
+                                {% if form.password_confirm.errors %}
+                                <div class="text-danger small">{{ form.password_confirm.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Form Actions -->
+                    <div class="row mt-5">
+                        <div class="col-md-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'accounts:admin_customers' %}" class="btn btn-outline-secondary">
+                                    <span class="icon-arrow_back mr-2"></span>Cancelar
+                                </a>
+                                <div>
+                                    {% if customer %}
+                                    <a href="{% url 'accounts:admin_customer_delete' customer.id %}" 
+                                       class="btn btn-outline-danger mr-2"
+                                       onclick="return confirm('¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer.')">
+                                        <span class="icon-delete mr-2"></span>Eliminar
+                                    </a>
+                                    {% endif %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="icon-save mr-2"></span>
+                                        {% if customer %}Actualizar Cliente{% else %}Crear Cliente{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Customer Stats (for edit mode) -->
+        {% if customer %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Estadísticas del Cliente</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="border-right">
+                            <h4 class="text-primary">{{ customer.orders.count }}</h4>
+                            <p class="text-muted mb-0">Total Pedidos</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border-right">
+                            <h4 class="text-success">
+                                ${{ customer_total_spent|default:"0" }}
+                            </h4>
+                            <p class="text-muted mb-0">Total Gastado</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="text-info">
+                            {{ customer.created|date:"d/m/Y" }}
+                        </h4>
+                        <p class="text-muted mb-0">Miembro desde</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

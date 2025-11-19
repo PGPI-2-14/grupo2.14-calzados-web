@@ -1,0 +1,297 @@
+{% extends "accounts/admin_base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if product %}Editar {{ product.name }}{% else %}Crear Producto{% endif %}
+{% endblock %}
+
+{% block admin_section %}
+    {% if product %}Editar Producto{% else %}Nuevo Producto{% endif %}
+{% endblock %}
+
+{% block admin_content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    {% if product %}
+                        <span class="icon-edit mr-2"></span>Editar Producto: {{ product.name }}
+                    {% else %}
+                        <span class="icon-add mr-2"></span>Crear Nuevo Producto
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- Display form errors -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Por favor corrige los siguientes errores:</strong>
+                        <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endif %}
+
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Información Básica</h5>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Nombre del Producto *</label>
+                                <input type="text" class="form-control" name="name" 
+                                       value="{% if form.name.value %}{{ form.name.value }}{% elif product %}{{ product.name }}{% endif %}" required>
+                                {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Slug *</label>
+                                <input type="text" class="form-control" name="slug" 
+                                       value="{% if form.slug.value %}{{ form.slug.value }}{% elif product %}{{ product.slug }}{% endif %}" required>
+                                <small class="form-text text-muted">URL amigable para el producto</small>
+                                {% if form.slug.errors %}
+                                <div class="text-danger small">{{ form.slug.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Categoría *</label>
+                                <select class="form-control" name="category" required>
+                                    <option value="">Seleccionar categoría</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}" 
+                                            {% if form.category.value == category.id or product and product.category_id == category.id %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.category.errors %}
+                                <div class="text-danger small">{{ form.category.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Marca</label>
+                                <select class="form-control" name="brand">
+                                    <option value="">Sin marca</option>
+                                    {% for brand in brands %}
+                                    <option value="{{ brand.id }}" 
+                                            {% if form.brand.value == brand.id or product and product.brand_id == brand.id %}selected{% endif %}>
+                                        {{ brand.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Descripción</label>
+                        <textarea class="form-control" name="description" rows="4">{% if form.description.value %}{{ form.description.value }}{% elif product %}{{ product.description }}{% endif %}</textarea>
+                        {% if form.description.errors %}
+                        <div class="text-danger small">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Precio y Stock</h5>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Precio Regular *</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">$</span>
+                                    </div>
+                                    <input type="number" step="0.01" class="form-control" name="price" 
+                                           value="{% if form.price.value %}{{ form.price.value }}{% elif product %}{{ product.price }}{% else %}0{% endif %}" required>
+                                </div>
+                                {% if form.price.errors %}
+                                <div class="text-danger small">{{ form.price.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Precio de Oferta</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">$</span>
+                                    </div>
+                                    <input type="number" step="0.01" class="form-control" name="offer_price" 
+                                           value="{% if form.offer_price.value %}{{ form.offer_price.value }}{% elif product %}{{ product.offer_price }}{% else %}0{% endif %}">
+                                </div>
+                                <small class="form-text text-muted">Dejar en 0 si no hay oferta</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Stock *</label>
+                                <input type="number" class="form-control" name="stock" 
+                                       value="{% if form.stock.value %}{{ form.stock.value }}{% elif product %}{{ product.stock }}{% else %}0{% endif %}" required>
+                                {% if form.stock.errors %}
+                                <div class="text-danger small">{{ form.stock.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attributes -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Atributos del Producto</h5>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Género</label>
+                                <select class="form-control" name="gender">
+                                    <option value="unisex" {% if form.gender.value == 'unisex' or product and product.gender == 'unisex' %}selected{% endif %}>Unisex</option>
+                                    <option value="male" {% if form.gender.value == 'male' or product and product.gender == 'male' %}selected{% endif %}>Masculino</option>
+                                    <option value="female" {% if form.gender.value == 'female' or product and product.gender == 'female' %}selected{% endif %}>Femenino</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Color</label>
+                                <input type="text" class="form-control" name="color" 
+                                       value="{% if form.color.value %}{{ form.color.value }}{% elif product %}{{ product.color }}{% endif %}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Material</label>
+                                <input type="text" class="form-control" name="material" 
+                                       value="{% if form.material.value %}{{ form.material.value }}{% elif product %}{{ product.material }}{% endif %}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Imagen del Producto</h5>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Imagen Principal</label>
+                        {% if product and product.image %}
+                        <div class="mb-3">
+                            <img src="{{ product.image.url }}" alt="Current image" 
+                                 class="img-fluid rounded" style="max-height: 200px;">
+                            <div class="form-check mt-2">
+                                <input type="checkbox" class="form-check-input" name="clear_image" id="clear_image">
+                                <label class="form-check-label" for="clear_image">Eliminar imagen actual</label>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control-file" name="image" accept="image/*">
+                        <small class="form-text text-muted">Formatos: JPG, PNG, GIF. Tamaño máximo: 5MB</small>
+                        {% if form.image.errors %}
+                        <div class="text-danger small">{{ form.image.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="border-bottom pb-2">Configuración</h5>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="available" 
+                                           id="available" {% if form.available.value or product and product.available %}checked{% endif %}>
+                                    <label class="form-check-label font-weight-bold" for="available">Disponible</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="is_featured" 
+                                           id="is_featured" {% if form.is_featured.value or product and product.is_featured %}checked{% endif %}>
+                                    <label class="form-check-label font-weight-bold" for="is_featured">Producto Destacado</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="row mt-5">
+                        <div class="col-md-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'accounts:admin_products' %}" class="btn btn-outline-secondary">
+                                    <span class="icon-arrow_back mr-2"></span>Cancelar
+                                </a>
+                                <div>
+                                    {% if product %}
+                                    <a href="{% url 'accounts:admin_product_delete' product.id %}" 
+                                       class="btn btn-outline-danger mr-2"
+                                       onclick="return confirm('¿Estás seguro de que deseas eliminar este producto?')">
+                                        <span class="icon-delete mr-2"></span>Eliminar
+                                    </a>
+                                    {% endif %}
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="icon-save mr-2"></span>
+                                        {% if product %}Actualizar Producto{% else %}Crear Producto{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
