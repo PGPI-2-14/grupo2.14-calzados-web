@@ -20,6 +20,8 @@ try:
         save_orders_to_fixture,
         save_order_items_to_fixture,
         save_user_accounts_to_fixture,
+        save_categories_to_fixture,
+        save_brands_to_fixture,
     )
 except Exception:
     def save_products_to_fixture():
@@ -29,6 +31,10 @@ except Exception:
     def save_order_items_to_fixture():
         pass
     def save_user_accounts_to_fixture():
+        pass
+    def save_categories_to_fixture():
+        pass
+    def save_brands_to_fixture():
         pass
 
 
@@ -128,18 +134,52 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
 
 @require_admin
 def product_delete(request: HttpRequest, id: int) -> HttpResponse:
-    # Confirmación sencilla
+    # Get product to delete
+    try:
+        product = Product.objects.get(id=id)
+    except Exception:
+        return redirect(reverse('accounts:admin_products'))
+    
     if request.method == 'POST':
-        # Eliminar del FakeManager: reescribir la lista sin el producto
+        # Store references before deletion
+        category = getattr(product, 'category', None)
+        brand = getattr(product, 'brand', None)
+        
+        # Eliminar del FakeManager
         remaining = [p for p in Product.objects.all() if getattr(p, 'id', None) != id]
         Product.objects.bulk_set(remaining)
+        
+        # Check if category should be deleted (no more products)
+        if category:
+            cat_products = [p for p in Product.objects.all() if getattr(getattr(p, 'category', None), 'id', None) == category.id]
+            if not cat_products:
+                # Delete category
+                remaining_cats = [c for c in Category.objects.all() if getattr(c, 'id', None) != category.id]
+                Category.objects.bulk_set(remaining_cats)
+                try:
+                    save_categories_to_fixture()
+                except Exception:
+                    pass
+        
+        # Check if brand should be deleted (no more products)
+        if brand:
+            brand_products = [p for p in Product.objects.all() if getattr(getattr(p, 'brand', None), 'id', None) == brand.id]
+            if not brand_products:
+                # Delete brand
+                remaining_brands = [b for b in Brand.objects.all() if getattr(b, 'id', None) != brand.id]
+                Brand.objects.bulk_set(remaining_brands)
+                try:
+                    save_brands_to_fixture()
+                except Exception:
+                    pass
+        
         try:
             save_products_to_fixture()
         except Exception:
             pass
         return redirect(reverse('accounts:admin_products'))
+    
     # Mostrar confirmación
-    product = Product.objects.get(id=id)
     return render(request, 'accounts/admin/products/confirm_delete.html', {'product': product})
 
 
@@ -156,7 +196,6 @@ def customer_create(request: HttpRequest) -> HttpResponse:
         form = CustomerForm(request.POST)
         if form.is_valid():
             kwargs = form.to_kwargs()
-            # password_hash no lo solicitamos en admin-lite; dejar vacío
             UserAccount.objects.create(**kwargs)
             try:
                 save_user_accounts_to_fixture()
@@ -170,7 +209,6 @@ def customer_create(request: HttpRequest) -> HttpResponse:
 
 @require_admin
 def customer_edit(request: HttpRequest, id: int) -> HttpResponse:
-    # Asegurar que solo editamos cuentas de rol 'customer'
     customer = UserAccount.objects.get(id=id, role=UserAccount.ROLE_CUSTOMER)
     if request.method == 'POST':
         form = CustomerForm(request.POST)
@@ -181,11 +219,9 @@ def customer_edit(request: HttpRequest, id: int) -> HttpResponse:
             customer.first_name = cd.get('first_name', customer.first_name)
             customer.last_name = cd.get('last_name', customer.last_name)
             customer.is_active = bool(cd.get('is_active', True))
-            # Si es un modelo real, guardar cambios
             try:
                 customer.save()
             except Exception:
-                # En el escenario MockDB, puede que no exista save()
                 pass
             try:
                 save_user_accounts_to_fixture()
@@ -207,12 +243,10 @@ def customer_edit(request: HttpRequest, id: int) -> HttpResponse:
 @require_admin
 def customer_delete(request: HttpRequest, id: int) -> HttpResponse:
     if request.method == 'POST':
-        # Intentar borrar el registro
         try:
             u = UserAccount.objects.get(id=id, role=UserAccount.ROLE_CUSTOMER)
             u.delete()
         except Exception:
-            # En caso de MockDB, sobrescribir si hace falta
             remaining = [c for c in UserAccount.objects.filter(role=UserAccount.ROLE_CUSTOMER) if getattr(c, 'id', None) != id]
             try:
                 UserAccount.objects.bulk_set(remaining)
@@ -240,7 +274,6 @@ def sales_dashboard(request: HttpRequest) -> HttpResponse:
         tot = getattr(o, 'total', None)
         if tot not in (None, 0, '0'):
             return tot
-        # fallback: sumar items
         items = OrderItem.objects.filter(order=o)
         s = 0
         for it in items:
@@ -264,7 +297,6 @@ def order_list(request: HttpRequest) -> HttpResponse:
     statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
     orders_qs = Order.objects.all()
     if status:
-        # Simple filter in FakeManager
         orders_qs = orders_qs.filter(status=status)
     ctx = {
         'orders': list(orders_qs),
@@ -302,6 +334,30 @@ def order_update_status(request: HttpRequest, id: int) -> HttpResponse:
     return redirect(reverse('accounts:admin_order_detail', args=[id]))
 
 
+@require_admin
+def order_delete(request: HttpRequest, id: int) -> HttpResponse:
+    """Delete an order and its items"""
+    if request.method == 'POST':
+        # Delete order items first
+        items = list(OrderItem.objects.filter(order=Order.objects.get(id=id)))
+        remaining_items = [item for item in OrderItem.objects._items if getattr(getattr(item, 'order', None), 'id', None) != id]
+        OrderItem.objects.bulk_set(remaining_items)
+        
+        # Delete order
+        remaining_orders = [o for o in Order.objects.all() if getattr(o, 'id', None) != id]
+        Order.objects.bulk_set(remaining_orders)
+        
+        try:
+            save_orders_to_fixture()
+            save_order_items_to_fixture()
+        except Exception:
+            pass
+        return redirect(reverse('accounts:admin_orders'))
+    
+    order = Order.objects.get(id=id)
+    return render(request, 'accounts/admin/orders/confirm_delete.html', {'order': order})
+
+
 # -------------------- CHECKOUT (ADMIN-LITE, SOLO PRUEBAS) --------------------
 
 ADMIN_CHECKOUT_KEY = 'admin_checkout_data'
@@ -317,7 +373,6 @@ def checkout_delivery(request: HttpRequest) -> HttpResponse:
             return redirect(reverse('accounts:admin_checkout_payment'))
     else:
         form = DeliveryForm()
-    # Estimación con método por defecto
     subtotal = float(cart.get_total_price())
     method_code = form.fields['shipping_method'].initial or 'home'
     shipping_estimate = compute_shipping(subtotal, method_code)
@@ -345,9 +400,7 @@ def checkout_payment(request: HttpRequest) -> HttpResponse:
             method_code = data.get('shipping_method', 'home')
             shipping_cost = compute_shipping(subtotal, method_code)
             total = subtotal + shipping_cost
-            # Si el cliente elige contrareembolso, aceptamos el pedido (estado 'processing') sin marcar como pagado.
             order_status = 'processing' if payment_method == 'cod' else 'pending'
-            # Crear pedido en MockDB
             next_id = getattr(Order.objects, '_next_id', 1)
             order = Order.objects.create(
                 id=next_id,
@@ -368,7 +421,6 @@ def checkout_payment(request: HttpRequest) -> HttpResponse:
             )
             for item in cart:
                 OrderItem.objects.create(order=order, product=item['product'], price=item['price'], quantity=item['quantity'])
-                # Decrementar stock del producto y persistir
                 try:
                     prod = item['product']
                     qty = int(item['quantity'])
@@ -387,7 +439,6 @@ def checkout_payment(request: HttpRequest) -> HttpResponse:
             return render(request, 'accounts/admin/checkout/created.html', {'order': order})
     else:
         form = PaymentForm()
-    # Resumen
     subtotal = float(cart.get_total_price())
     method_code = data.get('shipping_method', 'home')
     shipping_cost = compute_shipping(subtotal, method_code)
