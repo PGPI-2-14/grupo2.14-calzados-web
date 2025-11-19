@@ -1,7 +1,8 @@
 from django.db import models
 from shop.models import Product
 from accounts.models import UserAccount
-
+from decimal import Decimal
+from .shipping import compute_shipping, method_choices
 
 class Customer(UserAccount):
     """Cliente del ecommerce que hereda de UserAccount.
@@ -19,6 +20,13 @@ class Customer(UserAccount):
         return f"{self.first_name} {self.last_name}"
 
 class Order(models.Model):
+    CARD = 'card'
+    CASH_ON_DELIVERY = 'cod'
+    PAYMENT_CHOICES = [
+        (CARD, 'Pago con tarjeta'),
+        (CASH_ON_DELIVERY, 'Pago a contrareembolso'),
+    ]
+    
     # Relación con cliente
     customer = models.ForeignKey(Customer, related_name='orders', on_delete=models.CASCADE, null=True, blank=True)
 
@@ -40,10 +48,21 @@ class Order(models.Model):
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # coste_entrega
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_method = models.CharField(max_length=30, default='') # metodo_pago
-    shipping_address = models.CharField(max_length=250, default='') # direccion_envio
+    shipping_method = models.CharField(
+        max_length=20,
+        choices=method_choices(),
+        default='home'
+    )
+    payment_method = models.CharField(
+        max_length=10,
+        choices=PAYMENT_CHOICES,
+        default=CARD
+    )
     phone = models.CharField(max_length=30, default='')
     paid = models.BooleanField(default=False)
+    
+    #Braintree atributes
+    braintree_id = models.CharField(max_length=150, blank=True)
 
     class Meta:
         ordering = ('-created',)
@@ -53,6 +72,15 @@ class Order(models.Model):
 
     def get_total_cost(self):
         return sum(item.get_cost() for item in self.items.all())
+    
+    def get_shipping_cost(self):
+        """Calculate shipping cost based on method and total"""
+        subtotal = sum(item.get_cost() for item in self.items.all())
+        return Decimal(str(compute_shipping(float(subtotal), self.shipping_method)))
+    
+    def is_payment_required(self):
+        """Check if payment is required (not pickup and not cash on delivery)"""
+        return self.shipping_method != 'store' and self.payment_method != self.CASH_ON_DELIVERY
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)

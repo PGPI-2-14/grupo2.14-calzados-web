@@ -4,24 +4,191 @@
 Checkout
 {% endblock %}
 {% block content %}
-<div class="container">
-    <h1 class="text-center">Checkout</h1>
-    <div class="order-info">
-        <h3 class="text-center">Your order</h3>
-        <ul>
-            {% for item in cart %}
-            <li>
-                {{ item.quantity }}x {{ item.product.name }}
-                <span>${{ item.total_price }}</span>
-            </li>
-            {% endfor %}
-        </ul>
-        <h4>Total: ${{ cart.get_total_price }}</h4>
+<div class="bg-light py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 mb-0">
+                <a href="{% url 'shop:product_list' %}">Menú Principal</a> 
+                <span class="mx-2 mb-0">/</span>
+                <a href="{% url 'cart:cart_detail' %}">Carrito</a>
+                <span class="mx-2 mb-0">/</span>
+                <strong class="text-black">Checkout</strong>
+            </div>
+        </div>
     </div>
-    <form action="." method="post" class="order-form">
-        {{ form|crispy }}
-        <p><input class="btn btn-primary btn-sm btn-block" type="submit" value="Place order"></p>
-        {% csrf_token %}
-    </form>
 </div>
+
+<div class="site-section">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-lg-7">
+                <form method="post" class="needs-validation">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Método de Entrega</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for value, label in form.shipping_method.field.choices %}
+                                <div class="custom-control custom-radio mb-3">
+                                    <input type="radio" class="custom-control-input" id="shipping_{{ value }}" name="shipping_method" value="{{ value }}" {% if form.shipping_method.value == value %}checked{% endif %} required>
+                                    <label class="custom-control-label" for="shipping_{{ value }}">
+                                        {{ label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Método de Pago</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for value, label in form.payment_method.field.choices %}
+                                <div class="custom-control custom-radio mb-3">
+                                    <input type="radio" class="custom-control-input" id="payment_{{ value }}" name="payment_method" value="{{ value }}" {% if form.payment_method.value == value %}checked{% endif %} required>
+                                    <label class="custom-control-label" for="payment_{{ value }}">
+                                        {{ label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Datos Personales</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}<small class="text-danger">{{ form.first_name.errors }}</small>{% endif %}
+                                </div>
+                                <div class="form-group col-md-6">
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}<small class="text-danger">{{ form.last_name.errors }}</small>{% endif %}
+                                </div>
+                            </div>
+                            {{ form.email }}
+                            {% if form.email.errors %}<small class="text-danger">{{ form.email.errors }}</small>{% endif %}
+                            {{ form.phone }}
+                            {% if form.phone.errors %}<small class="text-danger">{{ form.phone.errors }}</small>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm mb-4" id="address-section" style="display:none;">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Dirección de Envío</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ form.address }}
+                            {% if form.address.errors %}<small class="text-danger">{{ form.address.errors }}</small>{% endif %}
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    {{ form.city }}
+                                    {% if form.city.errors %}<small class="text-danger">{{ form.city.errors }}</small>{% endif %}
+                                </div>
+                                <div class="form-group col-md-6">
+                                    {{ form.postal_code }}
+                                    {% if form.postal_code.errors %}<small class="text-danger">{{ form.postal_code.errors }}</small>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg btn-block py-3">
+                        Continuar
+                    </button>
+                </form>
+                
+                <script>
+                    function toggleAddressSection() {
+                        const shippingMethod = document.querySelector('input[name="shipping_method"]:checked').value;
+                        const addressSection = document.getElementById('address-section');
+                        if (shippingMethod === 'home') {
+                            addressSection.style.display = 'block';
+                        } else {
+                            addressSection.style.display = 'none';
+                        }
+                    }
+                    
+                    document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
+                        radio.addEventListener('change', toggleAddressSection);
+                    });
+                    
+                    // Initialize on page load
+                    toggleAddressSection();
+                </script>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h3 class="h5 text-uppercase mb-4 font-weight-bold">Resumen del Pedido</h3>
+                        {% for item in cart %}
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <span>{{ item.product.name|default:"Producto eliminado" }} x {{ item.quantity }}</span>
+                            <span>${{ item.total_price|floatformat:"2" }}</span>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-flex justify-content-between mb-4 pb-3 border-bottom">
+                            <strong>Subtotal:</strong>
+                            <strong id="subtotal">${{ cart.get_total_price|floatformat:"2" }}</strong>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2 pb-3 border-bottom">
+                            <span>Envío:</span>
+                            <span id="shipping-cost">$0.00</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between font-weight-bold" style="font-size: 1.2em;">
+                            <span>Total:</span>
+                            <span id="total-cost">${{ cart.get_total_price|floatformat:"2" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const shippingConfig = {
+        'home': 4.99,
+        'store': 0.0
+    };
+    const FREE_SHIPPING_THRESHOLD = 50.0;
+    const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace('$', ''));
+    
+    function updateShippingCost() {
+        const shippingMethod = document.querySelector('input[name="shipping_method"]:checked').value;
+        let shippingCost = 0;
+        
+        if (shippingMethod === 'home') {
+            shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 4.99;
+        } else if (shippingMethod === 'store') {
+            shippingCost = 0;
+        }
+        
+        const total = subtotal + shippingCost;
+        document.getElementById('shipping-cost').textContent = '$' + shippingCost.toFixed(2);
+        document.getElementById('total-cost').textContent = '$' + total.toFixed(2);
+    }
+    
+    document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
+        radio.addEventListener('change', updateShippingCost);
+    });
+    
+    updateShippingCost();
+</script>
 {% endblock %}

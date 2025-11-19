@@ -8,41 +8,227 @@
     <div class="bg-light py-3">
       <div class="container">
         <div class="row">
-          <div class="col-md-12 mb-0"><a href="index.html">Menú Principal</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">{{ product.name }}</strong></div>
+          <div class="col-md-12 mb-0">
+            <a href="{% url 'shop:product_list' %}">Menú Principal</a> 
+            <span class="mx-2 mb-0">/</span> 
+            <a href="{% url 'shop:product_list' %}">Tienda</a>
+            <span class="mx-2 mb-0">/</span> 
+            <strong class="text-black">{{ product.name }}</strong>
+          </div>
         </div>
       </div>
     </div>  
-
+    
     <div class="site-section">
       <div class="container">
         <div class="row">
-          <div class="col-md-6">
-            <img src="{{ product.image.url }}" alt="Image" class="img-fluid">
-          </div>
-          <div class="col-md-6">
-            <h2 class="text-black mr-2">{{ product.name }}</h2>
-            <p>{{ product.description|linebreaks }}</p>
-            <p><strong class="text-primary h4">${{ product.price }}</strong></p>
-            <div class="mt-5 col-md-5">
-              <form action="{% url "cart:cart_add" product.id %}" method="post">
-                {% csrf_token %}
-                {{ cart_product_form|crispy }}
-                <input type="submit" class="buy-now btn btn-sm btn-primary" value="Add to cart">
-              </form>
+          <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+              {% if primary_image %}
+                <img src="{{ primary_image.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
+              {% elif product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
+              {% else %}
+                <img src="{% static 'img/placeholder-product.jpg' %}" alt="No image available" class="card-img-top p-4" style="object-fit: contain; height: 500px;">
+              {% endif %}
             </div>
+            
+            <div class="mt-3">
+              <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white" id="moreInfoHeading">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link text-dark text-decoration-none d-flex justify-content-between align-items-center w-100" type="button" data-toggle="collapse" data-target="#moreInfoCollapse" aria-expanded="false" aria-controls="moreInfoCollapse">
+                      <span><span class="icon-info mr-2"></span>Más información</span>
+                      <span class="icon-keyboard_arrow_down"></span>
+                    </button>
+                  </h5>
+                </div>
+                <div id="moreInfoCollapse" class="collapse" aria-labelledby="moreInfoHeading">
+                  <div class="card-body">
+                    <div class="mb-3">
+                      <p class="text-muted mb-0">{{ product.description|linebreaks }}</p>
+                    </div>
+                    <hr>
+                    <div class="row">
+                      {% if product.gender and product.gender != 'unisex' %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Género</p>
+                        <p class="mb-0 font-weight-bold">{{ product.gender|title }}</p>
+                      </div>
+                      {% endif %}
+                      {% if product.color %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Color</p>
+                        <p class="mb-0 font-weight-bold">{{ product.color }}</p>
+                      </div>
+                      {% endif %}
+                      {% if product.material %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Material</p>
+                        <p class="mb-0 font-weight-bold">{{ product.material }}</p>
+                      </div>
+                      {% endif %}
+                      {% if product.brand %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Marca</p>
+                        <p class="mb-0 font-weight-bold">{{ product.brand.name }}</p>
+                      </div>
+                      {% endif %}
+                      {% if product.category %}
+                      <div class="col-6 mb-3">
+                        <p class="mb-0 text-muted small">Categoría</p>
+                        <p class="mb-0 font-weight-bold">{{ product.category.name }}</p>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <h2 class="text-black mb-3">{{ product.name }}</h2>
+            
+            <div class="mb-4">
+              {% if not is_available %}
+                <span class="badge badge-danger">Producto no disponible</span>
+              {% elif sizes %}
+                <span id="stock-badge" class="badge badge-secondary">Seleccione talla</span>
+              {% elif product.stock > 0 %}
+                <span id="stock-badge" class="badge badge-success">En stock</span>
+              {% else %}
+                <span class="badge badge-danger">Agotado</span>
+              {% endif %}
+            </div>
+
+            <div class="mb-4">
+              {% if product.offer_price and product.offer_price < product.price %}
+                <h3 class="text-primary mb-1">${{ product.offer_price }}</h3>
+                <h5 class="text-muted mb-0"><del>${{ product.price }}</del></h5>
+                <span class="badge badge-warning">Oferta</span>
+              {% else %}
+                <h3 class="text-primary mb-0">${{ product.price }}</h3>
+              {% endif %}
+            </div>
+            
+            {% if not is_available %}
+              <!-- Product not available warning -->
+              <div class="alert alert-warning" role="alert">
+                <strong>⚠️ Producto no disponible</strong><br>
+                {% if product.stock > 0 and not has_sizes %}
+                  Este producto tiene stock pero no cuenta con tallas definidas. Por favor, contacte con el administrador.
+                {% else %}
+                  Este producto no está disponible en este momento.
+                {% endif %}
+              </div>
+              
+              <button type="button" class="btn btn-secondary btn-lg btn-block mb-3" disabled>
+                <span class="icon-remove_shopping_cart mr-2"></span>Producto no disponible
+              </button>
+              
+            {% else %}
+              <!-- Normal product form -->
+              <form action="{% url 'cart:cart_add' product.id %}" method="post" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {var btn = this.querySelector('button[type=submit]'); btn.innerHTML = '<span class=\'icon-check mr-2\'></span>Añadido al carrito'; btn.classList.remove('btn-primary'); btn.classList.add('btn-success'); setTimeout(() => {btn.innerHTML = '<span class=\'icon-shopping_cart mr-2\'></span>Añadir al carrito'; btn.classList.remove('btn-success'); btn.classList.add('btn-primary');}, 2000);});">
+                {% csrf_token %}
+                
+                <input type="hidden" name="price" value="{% if product.offer_price and product.offer_price < product.price %}{{ product.offer_price }}{% else %}{{ product.price }}{% endif %}">
+                
+                {% if sizes %}
+                <div class="mb-4">
+                  <label class="font-weight-bold mb-3">Selecciona tu talla (EU):</label>
+                  <div class="size-selector">
+                    {% for size in sizes %}
+                      {% if size.stock > 0 %}
+                        <input type="radio"
+                               id="size{{ forloop.counter }}"
+                               name="size"
+                               value="{{ size.size }}"
+                               data-stock="{{ size.stock }}"
+                               class="d-none size-input"
+                               onchange="onSizeSelected(this)"
+                               required>
+                        <label for="size{{ forloop.counter }}" class="size-label">{{ size.size }}</label>
+                      {% else %}
+                        <input type="radio"
+                               id="size{{ forloop.counter }}"
+                               name="size"
+                               value="{{ size.size }}"
+                               data-stock="0"
+                               class="d-none size-input"
+                               disabled>
+                        <label for="size{{ forloop.counter }}" class="size-label disabled" style="opacity: 0.5; cursor: not-allowed;">{{ size.size }} <small class="text-muted">(0)</small></label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+                
+                <div class="mb-4">
+                  <label class="font-weight-bold mb-3">Cantidad:</label>
+                  <div class="d-flex align-items-center">
+                    <div class="btn-group btn-group-lg" role="group">
+                      <button class="btn btn-outline-secondary px-3" type="button" onclick="var input = document.querySelector('input[name=quantity]'); if(input.value > 1) input.value = parseInt(input.value) - 1;">-</button>
+                      <input type="text" name="quantity" class="form-control text-center border-left-0 border-right-0" style="width: 80px; -moz-appearance: textfield;" value="1" readonly>
+                      <button class="btn btn-outline-secondary px-3" type="button" onclick="var input = document.querySelector('input[name=quantity]'); if(input.value < 99) input.value = parseInt(input.value) + 1;">+</button>
+                    </div>
+                  </div>
+                </div>
+                
+                <input type="hidden" name="override" value="False">
+                
+                <button id="add-to-cart-btn" type="submit" class="btn btn-primary btn-lg btn-block mb-3" {% if sizes %}disabled{% endif %}>
+                  <span class="icon-shopping_cart mr-2"></span>Añadir al carrito
+                </button>
+              </form>
+            {% endif %}
+            
+            <a href="{% url 'shop:product_list' %}" class="btn btn-outline-secondary btn-block">
+              <span class="icon-arrow_back mr-2"></span>Volver a la tienda
+            </a>
+            
+            <div class="mt-5">
+              <h5 class="font-weight-bold mb-3">Información adicional</h5>
+              <ul class="list-unstyled">
+                <li class="mb-2"><span class="icon-local_shipping mr-2 text-primary"></span>Envío gratis en pedidos superiores a $50</li>
+                <li class="mb-2"><span class="icon-verified_user mr-2 text-primary"></span>Garantía de calidad</li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="site-section block-3 site-blocks-2 bg-light">
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-md-7 site-section-heading text-center pt-4">
-            <h2>Productos</h2>
-          </div>
-        </div>
-      </div>
-    </div>
+<script>
+  // enable/disable add button and show stock per selected size
+  function onSizeSelected(radio) {
+    var stock = parseInt(radio.dataset.stock || '0', 10);
+    var badge = document.getElementById('stock-badge');
+    var addBtn = document.getElementById('add-to-cart-btn');
+    var qtyInput = document.querySelector('input[name=quantity]');
+
+    if (stock > 0) {
+      badge.classList.remove('badge-danger', 'badge-secondary');
+      badge.classList.add('badge-success');
+      badge.textContent = 'En stock';
+      if (addBtn) addBtn.disabled = false;
+      if (qtyInput) { qtyInput.value = 1; qtyInput.max = stock; }
+    } else {
+      badge.classList.remove('badge-success', 'badge-secondary');
+      badge.classList.add('badge-danger');
+      badge.textContent = 'Agotado';
+      if (addBtn) addBtn.disabled = true;
+      if (qtyInput) { qtyInput.value = 0; qtyInput.max = 0; }
+    }
+  }
+
+  // set initial quantity max for products without sizes
+  document.addEventListener('DOMContentLoaded', function () {
+    var hasSizes = {{ sizes|length }} > 0;
+    if (!hasSizes) {
+      var qtyInput = document.querySelector('input[name=quantity]');
+      if (qtyInput) qtyInput.max = {{ product.stock }};
+    }
+  });
+</script>
 {% endblock %}

@@ -13,3 +13,4 @@ python-decouple==3
 bleach==3.3.0
 whitenoise==5.0.1
 python-dotenv==0.12.0
+braintree==4.40.0

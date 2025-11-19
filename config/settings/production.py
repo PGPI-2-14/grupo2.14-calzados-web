@@ -6,13 +6,14 @@ import dj_database_url
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-SECRET_KEY = '5yo93-8a^%idwkzxz@6gq67p2ml#sraf4=7#pqg+28mv)koo@m'
+SECRET_KEY = '5yo93-8a^%idwkzxz@6gq67p2ml#sraf4=7#pqg+28mv)koo@m'  # overridden by env SECRET_KEY if present
 
 DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',
     'grupo2-14-calzados-web.onrender.com',
+    '.pythonanywhere.com',
 ]
 
 # Application definition
@@ -27,6 +28,7 @@ INSTALLED_APPS = [
     #third-party apps
     'crispy_forms',
 
+    'accounts.apps.AccountsConfig',
     'shop.apps.ShopConfig',
     'cart.apps.CartConfig',
     'order.apps.OrderConfig',
@@ -69,6 +71,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 dotenv_file = os.path.join(BASE_DIR, ".env")
 if os.path.isfile(dotenv_file):
     dotenv.load_dotenv(dotenv_file)
+
+# Override secret key from environment for security (never rely on the hard-coded fallback in real deployments)
+env_secret = os.environ.get('SECRET_KEY')
+if env_secret:
+    SECRET_KEY = env_secret
 
 # load database from the DATABASE_URL environment variable
 DATABASES = {}

@@ -6,12 +6,21 @@ class ShopConfig(AppConfig):
     name = 'shop'
 
     def ready(self):
-        # Activar mock DB en desarrollo si USE_MOCKDB=1
-        if getattr(settings, 'DEBUG', False) and os.environ.get('USE_MOCKDB') == '1':
+        # Activar MockDB si:
+        #  - USE_MOCKDB=1 (flag explícito) O
+        #  - La BD usa el motor dummy (sin conexión real)
+        use_flag = os.environ.get('USE_MOCKDB') == '1'
+        is_dummy = False
+        try:
+            default_db = settings.DATABASES.get('default')
+            is_dummy = default_db and default_db.get('ENGINE') == 'django.db.backends.dummy'
+        except Exception:
+            is_dummy = False
+
+        if use_flag or is_dummy:
             try:
                 from tests.mockdb.patcher import MockDB
                 MockDB().apply()
                 print('[mockdb] MockDB aplicada (managers parcheados desde JSON)')
             except Exception as e:
-                # No romper el arranque si hay algún problema
                 print(f'[mockdb] No se pudo aplicar MockDB: {e}')
