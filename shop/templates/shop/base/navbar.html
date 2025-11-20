@@ -1,3 +1,4 @@
+{% load static %}
 <header class="site-navbar" role="banner">
         <div class="site-navbar-top">
             <div class="container">
@@ -12,7 +13,9 @@
 
                     <div class="col-12 mb-3 mb-md-0 col-md-4 order-1 order-md-2 text-center">
                         <div class="site-logo">
-                            <a href="#" class="js-logo-clone">Nexo-Shoes</a>
+                            <a href="{% url 'shop:home' %}" style="border: none; padding: 0;">
+                                <img src="{% static 'img/nexo.png' %}" alt="Nexo Shoes" style="max-height: 100px;">
+                            </a>
                         </div>
                     </div>
 
