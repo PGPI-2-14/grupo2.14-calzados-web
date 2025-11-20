@@ -41,7 +41,7 @@ def update_field(request):
         users = json.load(file)
 
     for u in users:
-        if u["username"] == user["username"]:
+        if u.get("email") == user.get("email"):
             u[field] = value
             break
     else:
@@ -58,7 +58,7 @@ def update_field(request):
 
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
+        email = request.POST.get('email')
         password = request.POST.get('password')
 
         data_path = Path(__file__).resolve().parent.parent / 'tests' / 'mockdb' / 'data' / 'customers.json'
@@ -71,11 +71,11 @@ def login_view(request):
             return render(request, 'accounts/login.html')
 
         for user in users:
-            if user['username'] == username and user['password'] == password:
+            if user.get('email') == email and user.get('password') == password:
                 request.session['mock_user'] = user
                 return redirect('shop:product_list')
 
-        messages.error(request, 'Usuario o contraseña incorrectos.')
+        messages.error(request, 'Correo electrónico o contraseña incorrectos.')
 
     return render(request, 'accounts/login.html')
 
@@ -95,8 +95,6 @@ def logout_view(request):
 
 def register_view(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
-        
-        username = request.POST.get('username', '').strip()
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
         email = request.POST.get('email', '').strip()
@@ -107,8 +105,8 @@ def register_view(request: HttpRequest) -> HttpResponse:
         password1 = request.POST.get('password1', '')
         password2 = request.POST.get('password2', '')
 
-        
-        if not all([username, first_name, last_name, email, password1, password2]):
+        # Validaciones básicas
+        if not all([first_name, last_name, email, address, postal_code, city, phone_number, password1, password2]):
             messages.error(request, 'Todos los campos son obligatorios.')
             return render(request, 'accounts/register.html')
 
@@ -125,11 +123,8 @@ def register_view(request: HttpRequest) -> HttpResponse:
         except FileNotFoundError:
             users = []
 
-        # Verificar si el usuario ya existe
+        # Verificar si el email ya existe
         for user in users:
-            if user.get('username') == username:
-                messages.error(request, 'El nombre de usuario ya está en uso.')
-                return render(request, 'accounts/register.html')
             if user.get('email') == email:
                 messages.error(request, 'El email ya está registrado.')
                 return render(request, 'accounts/register.html')
@@ -147,11 +142,9 @@ def register_view(request: HttpRequest) -> HttpResponse:
             'address': address,
             'city': city,
             'postal_code': postal_code,
-            'password': password1,
-            'username': username
+            'password': password1
         }
 
-        
         users.append(new_user)
 
         # Guardar en el JSON
