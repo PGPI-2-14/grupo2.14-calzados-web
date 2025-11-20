@@ -94,7 +94,78 @@ def logout_view(request):
 
 
 def register_view(request: HttpRequest) -> HttpResponse:
-    # Placeholder: vista de registro no implementada aún
+    if request.method == 'POST':
+        
+        username = request.POST.get('username', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        address = request.POST.get('address', '').strip()
+        postal_code = request.POST.get('postal_code', '').strip()
+        city = request.POST.get('city', '').strip()
+        phone_number = request.POST.get('phone_number', '').strip()
+        password1 = request.POST.get('password1', '')
+        password2 = request.POST.get('password2', '')
+
+        
+        if not all([username, first_name, last_name, email, password1, password2]):
+            messages.error(request, 'Todos los campos son obligatorios.')
+            return render(request, 'accounts/register.html')
+
+        if password1 != password2:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return render(request, 'accounts/register.html')
+
+        # Cargar usuarios existentes
+        data_path = Path(__file__).resolve().parent.parent / 'tests' / 'mockdb' / 'data' / 'customers.json'
+
+        try:
+            with open(data_path, 'r', encoding='utf-8') as file:
+                users = json.load(file)
+        except FileNotFoundError:
+            users = []
+
+        # Verificar si el usuario ya existe
+        for user in users:
+            if user.get('username') == username:
+                messages.error(request, 'El nombre de usuario ya está en uso.')
+                return render(request, 'accounts/register.html')
+            if user.get('email') == email:
+                messages.error(request, 'El email ya está registrado.')
+                return render(request, 'accounts/register.html')
+
+        # Generar nuevo ID (máximo ID + 1)
+        new_id = max([user.get('id', 0) for user in users], default=0) + 1
+
+        # Crear nuevo usuario
+        new_user = {
+            'id': new_id,
+            'first_name': first_name,
+            'last_name': last_name,
+            'email': email,
+            'phone': phone_number,
+            'address': address,
+            'city': city,
+            'postal_code': postal_code,
+            'password': password1,
+            'username': username
+        }
+
+        
+        users.append(new_user)
+
+        # Guardar en el JSON
+        try:
+            with open(data_path, 'w', encoding='utf-8') as file:
+                json.dump(users, file, indent=4, ensure_ascii=False)
+            
+            # Iniciar sesión automáticamente
+            request.session['mock_user'] = new_user
+            return redirect('shop:product_list')
+        except Exception as e:
+            messages.error(request, f'Error al guardar el usuario: {str(e)}')
+            return render(request, 'accounts/register.html')
+
     return render(request, 'accounts/register.html')
 
 def my_data_view(request):
