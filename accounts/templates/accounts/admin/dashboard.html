@@ -14,7 +14,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="mb-0 text-uppercase">Ingresos Totales</h6>
-                        <h3 class="mb-0 mt-2">${{ total_revenue|floatformat:2|default:"0.00" }}</h3>
+                        <h3 class="mb-0 mt-2">{{ total_revenue|floatformat:2|default:"0.00" }}€</h3>
                     </div>
                     <div>
                         <span class="icon-attach_money" style="font-size: 3rem; opacity: 0.3;"></span>
@@ -62,7 +62,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="mb-0 text-uppercase">Ticket Promedio</h6>
-                        <h3 class="mb-0 mt-2">${{ average_order_value|floatformat:2|default:"0.00" }}</h3>
+                        <h3 class="mb-0 mt-2">{{ average_order_value|floatformat:2|default:"0.00" }}€</h3>
                     </div>
                     <div>
                         <span class="icon-receipt" style="font-size: 3rem; opacity: 0.3;"></span>
@@ -99,7 +99,7 @@
                             <tr>
                                 <td>{{ order.order_number }}</td>
                                 <td>{{ order.first_name }} {{ order.last_name }}</td>
-                                <td class="font-weight-bold">${{ order.total|floatformat:2 }}</td>
+                                <td class="font-weight-bold">{{ order.total|floatformat:2 }}€</td>
                                 <td>
                                     {% if order.status == 'delivered' %}
                                     <span class="badge badge-success">Entregado</span>

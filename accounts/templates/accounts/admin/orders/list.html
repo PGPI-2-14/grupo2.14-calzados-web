@@ -68,7 +68,7 @@
                                 {{ order.first_name }} {{ order.last_name }}<br>
                                 <small class="text-muted">{{ order.email }}</small>
                             </td>
-                            <td class="font-weight-bold">${{ order.total }}</td>
+                            <td class="font-weight-bold">{{ order.total }}€</td>
                             <td>
                                 {% if order.status == 'delivered' %}
                                 <span class="badge badge-success">{{ order.status|title }}</span>

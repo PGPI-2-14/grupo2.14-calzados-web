@@ -133,35 +133,36 @@
             <h2 class="text-black mb-3">{{ product.name }}</h2>
             
             <div class="mb-4">
-              {% if not is_available %}
+              {% if product.stock <= 0 %}
+                <span class="badge badge-danger">Agotado</span>
+              {% elif not is_available %}
                 <span class="badge badge-danger">Producto no disponible</span>
               {% elif sizes %}
                 <span id="stock-badge" class="badge badge-secondary">Seleccione talla</span>
-              {% elif product.stock > 0 %}
-                <span id="stock-badge" class="badge badge-success">En stock</span>
               {% else %}
-                <span class="badge badge-danger">Agotado</span>
+                <span id="stock-badge" class="badge badge-success">En stock</span>
               {% endif %}
             </div>
 
             <div class="mb-4">
               {% if product.offer_price and product.offer_price < product.price %}
-                <h3 class="text-primary mb-1">${{ product.offer_price }}</h3>
-                <h5 class="text-muted mb-0"><del>${{ product.price }}</del></h5>
+                <h3 class="text-primary mb-1">{{ product.offer_price }}€</h3>
+                <h5 class="text-muted mb-0"><del>{{ product.price }}€</del></h5>
                 <span class="badge badge-warning">Oferta</span>
               {% else %}
-                <h3 class="text-primary mb-0">${{ product.price }}</h3>
+                <h3 class="text-primary mb-0">{{ product.price }}€</h3>
               {% endif %}
             </div>
             
             {% if not is_available %}
               <!-- Product not available warning -->
               <div class="alert alert-warning" role="alert">
-                <strong>⚠️ Producto no disponible</strong><br>
                 {% if product.stock > 0 and not has_sizes %}
+                  <strong>⚠️ Producto no disponible</strong><br>
                   Este producto tiene stock pero no cuenta con tallas definidas. Por favor, contacte con el administrador.
                 {% else %}
-                  Este producto no está disponible en este momento.
+                  <strong>⚠️ Agotado</strong><br>
+                  Este producto no tiene stock en este momento.
                 {% endif %}
               </div>
               
@@ -232,7 +233,7 @@
             <div class="mt-5">
               <h5 class="font-weight-bold mb-3">Información adicional</h5>
               <ul class="list-unstyled">
-                <li class="mb-2"><span class="icon-local_shipping mr-2 text-primary"></span>Envío gratis en pedidos superiores a $50</li>
+                <li class="mb-2"><span class="icon-local_shipping mr-2 text-primary"></span>Envío gratis en pedidos superiores a 50€</li>
                 <li class="mb-2"><span class="icon-verified_user mr-2 text-primary"></span>Garantía de calidad</li>
               </ul>
             </div>

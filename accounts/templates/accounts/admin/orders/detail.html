@@ -54,23 +54,23 @@
                                     </div>
                                 </td>
                                 <td class="text-center align-middle">{{ item.quantity }}</td>
-                                <td class="text-right align-middle">${{ item.price|floatformat:2 }}</td>
-                                <td class="text-right align-middle"><strong>${{ item.get_cost|floatformat:2 }}</strong></td>
+                                <td class="text-right align-middle">{{ item.price|floatformat:2 }}€</td>
+                                <td class="text-right align-middle"><strong>{{ item.get_cost|floatformat:2 }}€</strong></td>
                             </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot class="bg-light">
                             <tr>
                                 <td colspan="3" class="text-right"><strong>Subtotal:</strong></td>
-                                <td class="text-right"><strong>${{ order.subtotal|floatformat:2 }}</strong></td>
+                                <td class="text-right"><strong>{{ order.subtotal|floatformat:2 }}€</strong></td>
                             </tr>
                             <tr>
                                 <td colspan="3" class="text-right">Envío:</td>
-                                <td class="text-right">${{ order.shipping_cost|floatformat:2 }}</td>
+                                <td class="text-right">{{ order.shipping_cost|floatformat:2 }}€</td>
                             </tr>
                             <tr>
                                 <td colspan="3" class="text-right"><strong>Total:</strong></td>
-                                <td class="text-right"><strong class="text-primary">${{ order.total|floatformat:2 }}</strong></td>
+                                <td class="text-right"><strong class="text-primary">{{ order.total|floatformat:2 }}€</strong></td>
                             </tr>
                         </tfoot>
                     </table>

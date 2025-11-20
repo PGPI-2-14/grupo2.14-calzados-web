@@ -50,7 +50,7 @@ Hola {ctx['customer_name']},
 ¡Gracias por tu pedido en Nexo Shoes!
 
 Número de pedido: {ctx['order_number']}
-Total: ${ctx['total']}
+Total: {ctx['total']}€
 
 Detalles del pedido:
 """
@@ -58,12 +58,12 @@ Detalles del pedido:
         product_name = getattr(getattr(item, 'product', None), 'name', 'Producto')
         quantity = getattr(item, 'quantity', 1)
         price = getattr(item, 'price', 0)
-        text_body += f"- {product_name} x{quantity} = ${float(price) * quantity}\n"
+        text_body += f"- {product_name} x{quantity} = {float(price) * quantity}€\n"
     
     text_body += f"""
-Subtotal: ${ctx['subtotal']}
-Envío: ${ctx['shipping_cost']}
-Total: ${ctx['total']}
+Subtotal: {ctx['subtotal']}€
+Envío: {ctx['shipping_cost']}€
+Total: {ctx['total']}€
 
 Gracias por tu compra.
 Nexo Shoes
@@ -152,15 +152,15 @@ def generate_order_ticket_text(order) -> str:
         
         size_text = f" (Talla: {size})" if size else ""
         lines.append(f"{product_name}{size_text}")
-        lines.append(f"  Cantidad: {quantity} x ${price} = ${float(price) * quantity:.2f}")
+        lines.append(f"  Cantidad: {quantity} x {price}€ = {float(price) * quantity:.2f}€")
         lines.append("")
     
     lines.append("-" * 60)
     lines.append("RESUMEN")
     lines.append("-" * 60)
-    lines.append(f"Subtotal: ${getattr(order, 'subtotal', 0)}")
-    lines.append(f"Envio: ${getattr(order, 'shipping_cost', 0)}")
-    lines.append(f"TOTAL: ${getattr(order, 'total', 0)}")
+    lines.append(f"Subtotal: {getattr(order, 'subtotal', 0)}€")
+    lines.append(f"Envio: {getattr(order, 'shipping_cost', 0)}€")
+    lines.append(f"TOTAL: {getattr(order, 'total', 0)}€")
     lines.append("")
     
     # Payment and shipping info

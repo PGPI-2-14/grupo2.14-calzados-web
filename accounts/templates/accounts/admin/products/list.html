@@ -82,11 +82,11 @@
                         <td>{{ product.category.name }}</td>
                         <td>
                             {% if product.offer_price and product.offer_price < product.price %}
-                                <span class="text-success">${{ product.offer_price }}</span>
+                                <span class="text-success">{{ product.offer_price }}€</span>
                                 <br>
-                                <small class="text-muted"><del>${{ product.price }}</del></small>
+                                <small class="text-muted"><del>{{ product.price }}€</del></small>
                             {% else %}
-                                ${{ product.price }}
+                                {{ product.price }}€
                             {% endif %}
                         </td>
                         <td>
