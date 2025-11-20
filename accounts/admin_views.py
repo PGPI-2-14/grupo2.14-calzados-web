@@ -119,13 +119,20 @@ def product_create(request: HttpRequest) -> HttpResponse:
         # Get next product ID
         next_product_id = max([getattr(p, 'id', 0) for p in Product.objects.all()], default=0) + 1
         
+        # Handle offer_price: if empty or 0, don't set an offer
+        offer_price_val = request.POST.get('offer_price', '').strip()
+        if offer_price_val and float(offer_price_val) > 0:
+            offer_price = offer_price_val
+        else:
+            offer_price = 0
+        
         product = Product.objects.create(
             id=next_product_id,
             name=request.POST.get('name'),
             slug=request.POST.get('slug'),
             description=request.POST.get('description', ''),
             price=request.POST.get('price'),
-            offer_price=request.POST.get('offer_price', 0) or 0,
+            offer_price=offer_price,
             stock=request.POST.get('stock', 0) or 0,
             available=bool(request.POST.get('available')),
             is_featured=bool(request.POST.get('is_featured')),
@@ -152,6 +159,13 @@ def product_create(request: HttpRequest) -> HttpResponse:
         
         save_products_to_fixture()
         messages.success(request, f'Producto "{product.name}" creado exitosamente.')
+        
+        # Reload MockDB to ensure all stats stay consistent
+        try:
+            from tests.mockdb.patcher import MockDB
+            MockDB().apply()
+        except Exception:
+            pass
         
         return redirect(reverse('accounts:admin_products'))
     
@@ -203,7 +217,12 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
         product.slug = request.POST.get('slug')
         product.description = request.POST.get('description', '')
         product.price = request.POST.get('price')
-        product.offer_price = request.POST.get('offer_price', 0) or 0
+        # Handle offer_price: if empty or 0, set to None to indicate no offer
+        offer_price_val = request.POST.get('offer_price', '').strip()
+        if offer_price_val and float(offer_price_val) > 0:
+            product.offer_price = offer_price_val
+        else:
+            product.offer_price = 0
         product.stock = request.POST.get('stock', 0) or 0
         product.available = bool(request.POST.get('available'))
         product.is_featured = bool(request.POST.get('is_featured'))
@@ -234,6 +253,13 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
         
         save_products_to_fixture()
         messages.success(request, f'Producto "{product.name}" actualizado exitosamente.')
+        
+        # Reload MockDB to ensure all stats stay consistent
+        try:
+            from tests.mockdb.patcher import MockDB
+            MockDB().apply()
+        except Exception:
+            pass
         
         return redirect(reverse('accounts:admin_products'))
     
@@ -267,31 +293,12 @@ def product_delete(request: HttpRequest, id: int) -> HttpResponse:
     if request.method == 'POST':
         product_name = getattr(product, 'name', '')
         
-        # Store references before deletion
-        category = getattr(product, 'category', None)
-        brand = getattr(product, 'brand', None)
-        
         # Eliminar del FakeManager
         remaining = [p for p in Product.objects.all() if getattr(p, 'id', None) != id]
         Product.objects.bulk_set(remaining)
         
-        # Check if category should be deleted (no more products)
-        if category:
-            cat_products = [p for p in Product.objects.all() if getattr(getattr(p, 'category', None), 'id', None) == category.id]
-            if not cat_products:
-                # Delete category
-                remaining_cats = [c for c in Category.objects.all() if getattr(c, 'id', None) != category.id]
-                Category.objects.bulk_set(remaining_cats)
-                save_categories_to_fixture()
-        
-        # Check if brand should be deleted (no more products)
-        if brand:
-            brand_products = [p for p in Product.objects.all() if getattr(getattr(p, 'brand', None), 'id', None) == brand.id]
-            if not brand_products:
-                # Delete brand
-                remaining_brands = [b for b in Brand.objects.all() if getattr(b, 'id', None) != brand.id]
-                Brand.objects.bulk_set(remaining_brands)
-                save_brands_to_fixture()
+        # Note: We keep categories and brands even if they have no products
+        # This allows reusing them for new products
         
         save_products_to_fixture()
         messages.success(request, f'Producto "{product_name}" eliminado exitosamente.')
@@ -320,6 +327,14 @@ def customer_create(request: HttpRequest) -> HttpResponse:
             kwargs['id'] = next_id
             UserAccount.objects.create(**kwargs)
             save_user_accounts_to_fixture()
+            
+            # Reload MockDB to ensure all stats stay consistent
+            try:
+                from tests.mockdb.patcher import MockDB
+                MockDB().apply()
+            except Exception:
+                pass
+            
             messages.success(request, 'Cliente creado exitosamente.')
             return redirect(reverse('accounts:admin_customers'))
     else:
