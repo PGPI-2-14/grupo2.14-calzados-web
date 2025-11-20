@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from cart.cart import Cart
 from .models import Order, OrderItem
 from .forms import OrderCreateForm
@@ -178,4 +180,59 @@ def order_created(request, order_id):
                 return redirect('shop:product_list')
     else:
         order = get_object_or_404(Order, id=order_id)
+    
+    # Enviar correo de confirmación
+    _send_order_confirmation_email(order)
+    
     return render(request, 'order/created.html', {'order': order})
+
+def _send_order_confirmation_email(order):
+    """Envía correo de confirmación del pedido al cliente."""
+    try:
+        import smtplib
+        import ssl
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        
+        subject = f'Confirmación de Pedido #{order.order_number} - Nexo Shoes'
+        
+        # Renderizar plantillas
+        html_message = render_to_string('emails/confirmation.html', {'order': order})
+        text_message = render_to_string('emails/confirmation.txt', {'order': order})
+        
+        try:
+            send_mail(
+                subject=subject,
+                message=text_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[order.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            print(f"Correo enviado a {order.email}")
+        except TypeError as e:
+            # Si falla por el error de keyfile, usar SMTP directamente
+            if 'keyfile' in str(e):
+                print("Usando envío SMTP directo (fix para Python 3.12+)")
+                
+                msg = MIMEMultipart('alternative')
+                msg['Subject'] = subject
+                msg['From'] = settings.EMAIL_HOST_USER
+                msg['To'] = order.email
+                
+                part1 = MIMEText(text_message, 'plain', 'utf-8')
+                part2 = MIMEText(html_message, 'html', 'utf-8')
+                msg.attach(part1)
+                msg.attach(part2)
+                
+                context = ssl.create_default_context()
+                with smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT) as server:
+                    server.starttls(context=context)
+                    server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+                    server.send_message(msg)
+                
+                print(f"Correo enviado a {order.email}")
+            else:
+                raise
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")
