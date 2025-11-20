@@ -1,9 +1,37 @@
 [
-  {"id": 1, "name": "Calzado", "slug": "calzado"},
-  {"id": 2, "name": "Deportivo", "slug": "deportivo"},
-  {"id": 3, "name": "Botas", "slug": "botas"},
-  {"id": 4, "name": "Sandalias", "slug": "sandalias"},
-  {"id": 5, "name": "Zapatillas Infantiles", "slug": "zapatillas-infantiles"},
-  {"id": 6, "name": "Formal", "slug": "formal"},
-  {"id": 7, "name": "Outdoor", "slug": "outdoor"}
+  {
+    "id": 1,
+    "name": "Calzado",
+    "slug": "calzado"
+  },
+  {
+    "id": 2,
+    "name": "Deportivo",
+    "slug": "deportivo"
+  },
+  {
+    "id": 3,
+    "name": "Botas",
+    "slug": "botas"
+  },
+  {
+    "id": 4,
+    "name": "Sandalias",
+    "slug": "sandalias"
+  },
+  {
+    "id": 5,
+    "name": "Zapatillas Infantiles",
+    "slug": "zapatillas-infantiles"
+  },
+  {
+    "id": 6,
+    "name": "Formal",
+    "slug": "formal"
+  },
+  {
+    "id": 7,
+    "name": "Outdoor",
+    "slug": "outdoor"
+  }
 ]

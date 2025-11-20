@@ -96,7 +96,7 @@
                                         <option value="">Seleccionar categoría</option>
                                         {% for category in categories %}
                                         <option value="{{ category.id }}" 
-                                                {% if form.category.value == category.id|stringformat:"i" or product and product.category_id == category.id %}selected{% endif %}>
+                                                {% if form.category.value == category.id|stringformat:"i" or current_category_id == category.id %}selected{% endif %}>
                                             {{ category.name }}
                                         </option>
                                         {% endfor %}

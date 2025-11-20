@@ -4,6 +4,8 @@ from typing import Any, List
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.contrib import messages
+from decimal import Decimal
 
 from accounts.utils import require_admin
 from accounts.forms import ProductForm, DeliveryForm, PaymentForm, CustomerForm
@@ -54,12 +56,11 @@ def product_list(request: HttpRequest) -> HttpResponse:
     if category_id and category_id.isdigit():
         try:
             cid = int(category_id)
-            cat = Category.objects.get(id=cid)
             products = [p for p in products if getattr(getattr(p, 'category', None), 'id', None) == cid]
         except Exception:
             pass
     
-    # Apply status filter
+    # Apply status filter  
     if status == 'available':
         products = [p for p in products if getattr(p, 'available', False)]
     elif status == 'out_of_stock':
@@ -80,9 +81,12 @@ def product_list(request: HttpRequest) -> HttpResponse:
     }
     return render(request, 'accounts/admin/products/list.html', ctx)
 
+
 @require_admin
 def product_create(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
+        from shop.models import ProductSize
+        
         # Handle new category
         category_value = request.POST.get('category', '')
         if category_value.startswith('new:'):
@@ -91,10 +95,7 @@ def product_create(request: HttpRequest) -> HttpResponse:
             next_cat_id = max([getattr(c, 'id', 0) for c in Category.objects.all()], default=0) + 1
             new_cat = Category.objects.create(id=next_cat_id, name=cat_name, slug=cat_slug)
             category_id = new_cat.id
-            try:
-                save_categories_to_fixture()
-            except:
-                pass
+            save_categories_to_fixture()
         else:
             category_id = int(category_value)
         
@@ -107,10 +108,7 @@ def product_create(request: HttpRequest) -> HttpResponse:
                 next_brand_id = max([getattr(b, 'id', 0) for b in Brand.objects.all()], default=0) + 1
                 new_brand = Brand.objects.create(id=next_brand_id, name=brand_name, image=SimpleNamespace(url=''))
                 brand_id = new_brand.id
-                try:
-                    save_brands_to_fixture()
-                except:
-                    pass
+                save_brands_to_fixture()
             else:
                 brand_id = int(brand_value)
         
@@ -118,7 +116,11 @@ def product_create(request: HttpRequest) -> HttpResponse:
         category = Category.objects.get(id=category_id)
         brand = Brand.objects.get(id=brand_id) if brand_id else None
         
+        # Get next product ID
+        next_product_id = max([getattr(p, 'id', 0) for p in Product.objects.all()], default=0) + 1
+        
         product = Product.objects.create(
+            id=next_product_id,
             name=request.POST.get('name'),
             slug=request.POST.get('slug'),
             description=request.POST.get('description', ''),
@@ -138,19 +140,18 @@ def product_create(request: HttpRequest) -> HttpResponse:
         # Handle sizes
         sizes = request.POST.getlist('sizes[]')
         stocks = request.POST.getlist('size_stocks[]')
-        from shop.models import ProductSize
         for size, stock in zip(sizes, stocks):
             if size and stock:
+                next_size_id = max([getattr(s, 'id', 0) for s in ProductSize.objects.all()], default=0) + 1
                 ProductSize.objects.create(
+                    id=next_size_id,
                     product=product,
                     size=size.strip(),
                     stock=int(stock)
                 )
         
-        try:
-            save_products_to_fixture()
-        except:
-            pass
+        save_products_to_fixture()
+        messages.success(request, f'Producto "{product.name}" creado exitosamente.')
         
         return redirect(reverse('accounts:admin_products'))
     
@@ -161,6 +162,7 @@ def product_create(request: HttpRequest) -> HttpResponse:
         'brands': brands,
         'mode': 'create'
     })
+
 
 @require_admin
 def product_edit(request: HttpRequest, id: int) -> HttpResponse:
@@ -177,10 +179,7 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
             next_cat_id = max([getattr(c, 'id', 0) for c in Category.objects.all()], default=0) + 1
             new_cat = Category.objects.create(id=next_cat_id, name=cat_name, slug=cat_slug)
             product.category = new_cat
-            try:
-                save_categories_to_fixture()
-            except:
-                pass
+            save_categories_to_fixture()
         else:
             cat_id = int(category_value)
             product.category = Category.objects.get(id=cat_id)
@@ -193,10 +192,7 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
                 next_brand_id = max([getattr(b, 'id', 0) for b in Brand.objects.all()], default=0) + 1
                 new_brand = Brand.objects.create(id=next_brand_id, name=brand_name, image=SimpleNamespace(url=''))
                 product.brand = new_brand
-                try:
-                    save_brands_to_fixture()
-                except:
-                    pass
+                save_brands_to_fixture()
             else:
                 product.brand = Brand.objects.get(id=int(brand_value))
         else:
@@ -218,8 +214,7 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
         product.image = SimpleNamespace(url=image_url)
         
         # Update sizes - remove old ones and add new ones
-        old_sizes = list(ProductSize.objects.filter(product=product))
-        remaining_sizes = [s for s in ProductSize.objects._items if getattr(s, 'product', None) != product]
+        remaining_sizes = [s for s in ProductSize.objects._items if getattr(getattr(s, 'product', None), 'id', None) != product.id]
         
         new_sizes = request.POST.getlist('sizes[]')
         new_stocks = request.POST.getlist('size_stocks[]')
@@ -237,21 +232,25 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
         
         ProductSize.objects.bulk_set(remaining_sizes)
         
-        try:
-            save_products_to_fixture()
-        except:
-            pass
+        save_products_to_fixture()
+        messages.success(request, f'Producto "{product.name}" actualizado exitosamente.')
         
         return redirect(reverse('accounts:admin_products'))
     
     categories = list(Category.objects.all())
     brands = list(Brand.objects.all())
     
+    # Get current category and brand IDs for template
+    current_category_id = getattr(getattr(product, 'category', None), 'id', None)
+    current_brand_id = getattr(getattr(product, 'brand', None), 'id', None)
+    
     return render(request, 'accounts/admin/products/form.html', {
         'product': product,
         'sizes': sizes,
         'categories': categories,
         'brands': brands,
+        'current_category_id': current_category_id,
+        'current_brand_id': current_brand_id,
         'mode': 'edit'
     })
 
@@ -262,9 +261,12 @@ def product_delete(request: HttpRequest, id: int) -> HttpResponse:
     try:
         product = Product.objects.get(id=id)
     except Exception:
+        messages.error(request, 'Producto no encontrado.')
         return redirect(reverse('accounts:admin_products'))
     
     if request.method == 'POST':
+        product_name = getattr(product, 'name', '')
+        
         # Store references before deletion
         category = getattr(product, 'category', None)
         brand = getattr(product, 'brand', None)
@@ -280,10 +282,7 @@ def product_delete(request: HttpRequest, id: int) -> HttpResponse:
                 # Delete category
                 remaining_cats = [c for c in Category.objects.all() if getattr(c, 'id', None) != category.id]
                 Category.objects.bulk_set(remaining_cats)
-                try:
-                    save_categories_to_fixture()
-                except Exception:
-                    pass
+                save_categories_to_fixture()
         
         # Check if brand should be deleted (no more products)
         if brand:
@@ -292,15 +291,10 @@ def product_delete(request: HttpRequest, id: int) -> HttpResponse:
                 # Delete brand
                 remaining_brands = [b for b in Brand.objects.all() if getattr(b, 'id', None) != brand.id]
                 Brand.objects.bulk_set(remaining_brands)
-                try:
-                    save_brands_to_fixture()
-                except Exception:
-                    pass
+                save_brands_to_fixture()
         
-        try:
-            save_products_to_fixture()
-        except Exception:
-            pass
+        save_products_to_fixture()
+        messages.success(request, f'Producto "{product_name}" eliminado exitosamente.')
         return redirect(reverse('accounts:admin_products'))
     
     # Mostrar confirmación
@@ -319,12 +313,14 @@ def customer_create(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
         form = CustomerForm(request.POST)
         if form.is_valid():
+            # Get next customer ID
+            next_id = max([getattr(c, 'id', 0) for c in UserAccount.objects.all()], default=0) + 1
+            
             kwargs = form.to_kwargs()
+            kwargs['id'] = next_id
             UserAccount.objects.create(**kwargs)
-            try:
-                save_user_accounts_to_fixture()
-            except Exception:
-                pass
+            save_user_accounts_to_fixture()
+            messages.success(request, 'Cliente creado exitosamente.')
             return redirect(reverse('accounts:admin_customers'))
     else:
         form = CustomerForm()
@@ -347,10 +343,8 @@ def customer_edit(request: HttpRequest, id: int) -> HttpResponse:
                 customer.save()
             except Exception:
                 pass
-            try:
-                save_user_accounts_to_fixture()
-            except Exception:
-                pass
+            save_user_accounts_to_fixture()
+            messages.success(request, 'Cliente actualizado exitosamente.')
             return redirect(reverse('accounts:admin_customers'))
     else:
         init = {
@@ -361,7 +355,7 @@ def customer_edit(request: HttpRequest, id: int) -> HttpResponse:
             'is_active': getattr(customer, 'is_active', True),
         }
         form = CustomerForm(initial=init)
-    return render(request, 'accounts/admin/customers/form.html', {'form': form, 'mode': 'edit', 'customer_id': id})
+    return render(request, 'accounts/admin/customers/form.html', {'form': form, 'mode': 'edit', 'customer': customer})
 
 
 @require_admin
@@ -369,17 +363,13 @@ def customer_delete(request: HttpRequest, id: int) -> HttpResponse:
     if request.method == 'POST':
         try:
             u = UserAccount.objects.get(id=id, role=UserAccount.ROLE_CUSTOMER)
-            u.delete()
+            customer_name = f"{u.first_name} {u.last_name}"
+            remaining = [c for c in UserAccount.objects.all() if getattr(c, 'id', None) != id]
+            UserAccount.objects.bulk_set(remaining)
         except Exception:
-            remaining = [c for c in UserAccount.objects.filter(role=UserAccount.ROLE_CUSTOMER) if getattr(c, 'id', None) != id]
-            try:
-                UserAccount.objects.bulk_set(remaining)
-            except Exception:
-                pass
-        try:
-            save_user_accounts_to_fixture()
-        except Exception:
-            pass
+            customer_name = "Cliente"
+        save_user_accounts_to_fixture()
+        messages.success(request, f'Cliente "{customer_name}" eliminado exitosamente.')
         return redirect(reverse('accounts:admin_customers'))
     customer = UserAccount.objects.get(id=id, role=UserAccount.ROLE_CUSTOMER)
     return render(request, 'accounts/admin/customers/confirm_delete.html', {'customer': customer})
@@ -390,12 +380,12 @@ def customer_delete(request: HttpRequest, id: int) -> HttpResponse:
 @require_admin
 def sales_dashboard(request: HttpRequest) -> HttpResponse:
     """Dashboard simplificado con estadísticas clave"""
-    from shop.models import Product
-    from accounts.models import UserAccount
-    from decimal import Decimal
     
+    # Get all orders
     orders = list(Order.objects.all())
     total_orders = len(orders)
+    
+    # Calculate paid and pending orders
     paid_orders = [o for o in orders if getattr(o, 'paid', False)]
     pending_orders = [o for o in orders if str(getattr(o, 'status', '')) in ('pending', 'processing')]
 
@@ -406,11 +396,12 @@ def sales_dashboard(request: HttpRequest) -> HttpResponse:
                 return Decimal(str(tot))
             except:
                 return Decimal('0')
-        items = OrderItem.objects.filter(order=o)
+        # Fallback: calculate from items
+        items = [item for item in OrderItem.objects._items if getattr(item, 'order', None) == o or getattr(getattr(item, 'order', None), 'id', None) == o.id]
         s = Decimal('0')
         for it in items:
             try:
-                s += Decimal(str(it.price)) * it.quantity
+                s += Decimal(str(getattr(it, 'price', 0))) * getattr(it, 'quantity', 1)
             except:
                 pass
         return s
@@ -421,10 +412,13 @@ def sales_dashboard(request: HttpRequest) -> HttpResponse:
     # Calculate additional stats
     products = list(Product.objects.all())
     total_products = len(products)
-    low_stock_products = len([p for p in products if getattr(p, 'stock', 0) < 10])
+    low_stock_products = len([p for p in products if getattr(p, 'stock', 0) < 10 and getattr(p, 'stock', 0) > 0])
     
     customers = list(UserAccount.objects.filter(role=UserAccount.ROLE_CUSTOMER))
     total_customers = len(customers)
+    
+    # Get recent orders (max 10)
+    recent_orders = sorted(orders, key=lambda x: getattr(x, 'created', ''), reverse=True)[:10]
     
     ctx = {
         'total_orders': total_orders,
@@ -433,22 +427,25 @@ def sales_dashboard(request: HttpRequest) -> HttpResponse:
         'revenue': revenue,
         'total_revenue': revenue,
         'average_order_value': average_order_value,
-        'recent_orders': orders[:10],
+        'recent_orders': recent_orders,
         'total_products': total_products,
         'low_stock_products': low_stock_products,
         'total_customers': total_customers,
     }
     return render(request, 'accounts/admin/dashboard.html', ctx)
 
+
 @require_admin
 def order_list(request: HttpRequest) -> HttpResponse:
     status = request.GET.get('status')
     statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
-    orders_qs = Order.objects.all()
+    orders = list(Order.objects.all())
+    
     if status:
-        orders_qs = orders_qs.filter(status=status)
+        orders = [o for o in orders if getattr(o, 'status', '') == status]
+    
     ctx = {
-        'orders': list(orders_qs),
+        'orders': orders,
         'selected_status': status,
         'statuses': statuses,
     }
@@ -458,11 +455,11 @@ def order_list(request: HttpRequest) -> HttpResponse:
 @require_admin
 def order_detail(request: HttpRequest, id: int) -> HttpResponse:
     order = Order.objects.get(id=id)
-    items = OrderItem.objects.filter(order=order)
+    # Get items for this order
+    items = [item for item in OrderItem.objects._items if getattr(getattr(item, 'order', None), 'id', None) == id]
     return render(request, 'accounts/admin/orders/detail.html', {
         'order': order,
-        'items': list(items),
-        'statuses': ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+        'items': items,
     })
 
 
@@ -476,10 +473,8 @@ def order_update_status(request: HttpRequest, id: int) -> HttpResponse:
     order.status = new_status
     if paid_flag is not None:
         order.paid = bool(paid_flag)
-    try:
-        save_orders_to_fixture()
-    except Exception:
-        pass
+    save_orders_to_fixture()
+    messages.success(request, f'Estado del pedido actualizado a "{new_status}".')
     return redirect(reverse('accounts:admin_order_detail', args=[id]))
 
 
@@ -487,8 +482,14 @@ def order_update_status(request: HttpRequest, id: int) -> HttpResponse:
 def order_delete(request: HttpRequest, id: int) -> HttpResponse:
     """Delete an order and its items"""
     if request.method == 'POST':
+        # Get order number before deletion
+        try:
+            order = Order.objects.get(id=id)
+            order_number = getattr(order, 'order_number', f'#{id}')
+        except:
+            order_number = f'#{id}'
+        
         # Delete order items first
-        items = list(OrderItem.objects.filter(order=Order.objects.get(id=id)))
         remaining_items = [item for item in OrderItem.objects._items if getattr(getattr(item, 'order', None), 'id', None) != id]
         OrderItem.objects.bulk_set(remaining_items)
         
@@ -496,11 +497,9 @@ def order_delete(request: HttpRequest, id: int) -> HttpResponse:
         remaining_orders = [o for o in Order.objects.all() if getattr(o, 'id', None) != id]
         Order.objects.bulk_set(remaining_orders)
         
-        try:
-            save_orders_to_fixture()
-            save_order_items_to_fixture()
-        except Exception:
-            pass
+        save_orders_to_fixture()
+        save_order_items_to_fixture()
+        messages.success(request, f'Pedido "{order_number}" eliminado exitosamente.')
         return redirect(reverse('accounts:admin_orders'))
     
     order = Order.objects.get(id=id)
@@ -577,12 +576,9 @@ def checkout_payment(request: HttpRequest) -> HttpResponse:
                         prod.stock = max(0, int(getattr(prod, 'stock', 0)) - qty)
                 except Exception:
                     pass
-            try:
-                save_orders_to_fixture()
-                save_order_items_to_fixture()
-                save_products_to_fixture()
-            except Exception:
-                pass
+            save_orders_to_fixture()
+            save_order_items_to_fixture()
+            save_products_to_fixture()
             cart.clear()
             request.session.pop(ADMIN_CHECKOUT_KEY, None)
             return render(request, 'accounts/admin/checkout/created.html', {'order': order})

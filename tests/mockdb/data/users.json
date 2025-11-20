@@ -52,14 +52,5 @@
     "first_name": "Lucía",
     "last_name": "Fernández",
     "is_active": true
-  },
-  {
-    "id": 7,
-    "email": "pablofh004@gmail.com",
-    "password_hash": "",
-    "role": "admin",
-    "first_name": "Pablo",
-    "last_name": "Ferrería",
-    "is_active": true
   }
 ]
