@@ -22,6 +22,21 @@ def _generate_order_number(next_id: int) -> str:
 
 def order_create(request):
     cart = Cart(request)
+    
+    # Obtener datos del usuario logueado si existe
+    initial_data = {}
+    if 'mock_user' in request.session:
+        user = request.session['mock_user']
+        initial_data = {
+            'first_name': user.get('first_name', ''),
+            'last_name': user.get('last_name', ''),
+            'email': user.get('email', ''),
+            'phone': user.get('phone', ''),
+            'address': user.get('address', ''),
+            'city': user.get('city', ''),
+            'postal_code': user.get('postal_code', ''),
+        }
+    
     if request.method == 'POST':
         form = OrderCreateForm(request.POST)
         if form.is_valid():
@@ -83,7 +98,7 @@ def order_create(request):
             # Otherwise go to payment
             return redirect('order:payment_process', order.id)
     else:
-        form = OrderCreateForm()
+        form = OrderCreateForm(initial=initial_data)
     return render(request, 'order/create.html', {'cart': cart, 'form': form})
 
 def _get_braintree_gateway():
