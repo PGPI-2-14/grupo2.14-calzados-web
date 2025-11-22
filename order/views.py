@@ -14,6 +14,15 @@ from config.braintreeSettings import BRAINTREE_CONF
 import os
 from django.core.exceptions import ImproperlyConfigured
 
+# Importar funciones de persistencia para MockDB
+try:
+    from tests.mockdb.patcher import save_orders_to_fixture, save_order_items_to_fixture
+except Exception:
+    def save_orders_to_fixture():
+        pass
+    def save_order_items_to_fixture():
+        pass
+
 def _mockdb_active():
     return os.environ.get('USE_MOCKDB') == '1' or getattr(settings, 'USE_MOCKDB', False)
 
@@ -42,8 +51,24 @@ def order_create(request):
         if form.is_valid():
             cd = form.cleaned_data
             
+            # Obtener customer_id y objeto Customer si el usuario está logueado
+            customer_id = None
+            customer_obj = None
+            customer_email = cd['email']
+            if 'mock_user' in request.session:
+                customer_id = request.session['mock_user'].get('id')
+                customer_email = request.session['mock_user'].get('email')
+                # Obtener el objeto Customer real para MockDB
+                try:
+                    from order.models import Customer
+                    customer_obj = Customer.objects.get(id=customer_id)
+                except Exception as e:
+                    print(f"⚠️ No se pudo obtener Customer con id {customer_id}: {e}")
+            
             # No forzar id: el FakeManager asigna un id único evitando duplicados
             next_generated_id = getattr(Order.objects, '_next_id', 1)
+            
+            # Crear el pedido en memoria
             order = Order.objects.create(
                 first_name=cd['first_name'],
                 last_name=cd['last_name'],
@@ -62,7 +87,9 @@ def order_create(request):
                 paid=False,
                 payment_method=cd.get('payment_method') or '',
                 phone=cd.get('phone') or '',
+                customer=customer_obj,  # Asignar el objeto Customer directamente
             )
+            
             # Calculate totals
             subtotal = Decimal('0.00')
             for item in cart:
@@ -73,7 +100,7 @@ def order_create(request):
             order.subtotal = subtotal
             order.shipping_cost = shipping_cost
             order.total = subtotal + shipping_cost
-            # No llamar a form.save(commit=False) en MockDB: devuelve instancia ORM sin id
+            order.save()
             
             # Create order items
             for item in cart:
@@ -87,12 +114,31 @@ def order_create(request):
                         size=item.get('size')
                     )
             
+            # Persistir en JSON (MockDB)
+            if _mockdb_active():
+                try:
+                    save_orders_to_fixture()
+                    save_order_items_to_fixture()
+                    print(f"✅ Pedido {order.order_number} guardado correctamente en JSON")
+                except Exception as e:
+                    print(f"❌ Error al persistir pedido: {e}")
+            
             cart.clear()
             
             # If no payment required, go directly to confirmation
             if not order.is_payment_required():
                 order.paid = True
+                order.status = 'paid'  # Actualizar estado
                 order.save()
+                
+                # Persistir cambio de estado en JSON (MockDB)
+                if _mockdb_active():
+                    try:
+                        save_orders_to_fixture()
+                        print(f"✅ Pedido {order.order_number} marcado como pagado (sin pago requerido)")
+                    except Exception as e:
+                        print(f"❌ Error al persistir estado: {e}")
+                
                 return redirect('order:order_created', order.id)
             
             # Otherwise go to payment
@@ -156,9 +202,19 @@ def payment_process(request, order_id):
 
         if result.is_success:
             order.paid = True
+            order.status = 'paid'  # Actualizar estado a pagado
             if getattr(result, 'transaction', None) and getattr(result.transaction, 'id', None):
                 order.braintree_id = result.transaction.id
             order.save()
+            
+            # Persistir en JSON (MockDB)
+            if _mockdb_active():
+                try:
+                    save_orders_to_fixture()
+                    print(f"✅ Pedido {order.order_number} marcado como pagado en JSON")
+                except Exception as e:
+                    print(f"❌ Error al persistir estado de pago: {e}")
+            
             return redirect('order:order_created', order.id)
         else:
             client_token = None

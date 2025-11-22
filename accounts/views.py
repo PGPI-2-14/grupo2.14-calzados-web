@@ -57,6 +57,10 @@ def update_field(request):
     return JsonResponse({"status": "ok"})
 
 def login_view(request):
+    # Cargar pedidos de usuarios no registrados si se proporciona un número de pedido
+    guest_orders = []
+    search_order_number = None
+    
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -76,8 +80,60 @@ def login_view(request):
                 return redirect('shop:product_list')
 
         messages.error(request, 'Correo electrónico o contraseña incorrectos.')
+    
+    # Si se proporciona un número de pedido por GET (para buscar pedidos de invitados)
+    elif request.method == 'GET' and request.GET.get('order_number'):
+        search_order_number = request.GET.get('order_number').strip()
+        
+        if getattr(settings, 'USE_MOCKDB', False):
+            repo_root = os.path.dirname(os.path.dirname(__file__))
+            data_dir = os.path.join(repo_root, 'tests', 'mockdb', 'data')
+            orders_path = os.path.join(data_dir, 'orders.json')
+            order_items_path = os.path.join(data_dir, 'order_items.json')
+            products_path = os.path.join(data_dir, 'products.json')
 
-    return render(request, 'accounts/login.html')
+            try:
+                with open(orders_path, 'r', encoding='utf-8') as f:
+                    orders_data = json.load(f)
+                
+                with open(order_items_path, 'r', encoding='utf-8') as f:
+                    order_items_data = json.load(f)
+                
+                with open(products_path, 'r', encoding='utf-8') as f:
+                    products_data = json.load(f)
+                
+                # Buscar pedido por número (sin importar si es de invitado o registrado)
+                found_order = next(
+                    (o for o in orders_data if o.get('order_number', '').upper() == search_order_number.upper()),
+                    None
+                )
+                
+                if found_order:
+                    # Mapear productos por ID
+                    products_map = {p.get('id'): p for p in products_data}
+                    
+                    # Enriquecer el pedido con sus items
+                    order_id = found_order.get('id')
+                    items = [
+                        {
+                            'product_name': products_map.get(item.get('product'), {}).get('name', 'Producto'),
+                            'quantity': item.get('quantity', 1),
+                            'price': item.get('price', 0),
+                            'size': item.get('size', ''),
+                        }
+                        for item in order_items_data
+                        if item.get('order') == order_id
+                    ]
+                    found_order['items'] = items
+                    guest_orders.append(found_order)
+                
+            except Exception as e:
+                print(f"Error al cargar pedido: {e}")
+
+    return render(request, 'accounts/login.html', {
+        'guest_orders': guest_orders,
+        'search_order_number': search_order_number
+    })
 
 def profile_view(request):
     if 'mock_user' in request.session:
@@ -168,6 +224,64 @@ def my_data_view(request):
     user = request.session['mock_user']
 
     return render(request, 'accounts/my_data.html', {'user': user})
+
+
+def my_orders_view(request):
+    """Vista para mostrar los pedidos del usuario logueado."""
+    if 'mock_user' not in request.session:
+        return redirect('accounts:login')
+
+    user = request.session['mock_user']
+    user_id = user.get('id')
+    
+    # Cargar pedidos del usuario desde el JSON
+    orders_list = []
+    if getattr(settings, 'USE_MOCKDB', False):
+        repo_root = os.path.dirname(os.path.dirname(__file__))
+        data_dir = os.path.join(repo_root, 'tests', 'mockdb', 'data')
+        orders_path = os.path.join(data_dir, 'orders.json')
+        order_items_path = os.path.join(data_dir, 'order_items.json')
+        products_path = os.path.join(data_dir, 'products.json')
+
+        try:
+            with open(orders_path, 'r', encoding='utf-8') as f:
+                orders_data = json.load(f)
+            
+            with open(order_items_path, 'r', encoding='utf-8') as f:
+                order_items_data = json.load(f)
+            
+            with open(products_path, 'r', encoding='utf-8') as f:
+                products_data = json.load(f)
+            
+            # Filtrar pedidos del usuario
+            user_orders = [o for o in orders_data if o.get('customer') == user_id]
+            
+            # Mapear productos por ID
+            products_map = {p.get('id'): p for p in products_data}
+            
+            # Enriquecer cada pedido con sus items
+            for order in user_orders:
+                order_id = order.get('id')
+                items = [
+                    {
+                        'product_name': products_map.get(item.get('product'), {}).get('name', 'Producto'),
+                        'quantity': item.get('quantity', 1),
+                        'price': item.get('price', 0),
+                        'size': item.get('size', ''),
+                    }
+                    for item in order_items_data
+                    if item.get('order') == order_id
+                ]
+                order['items'] = items
+                orders_list.append(order)
+            
+            # Ordenar por ID descendente (más recientes primero)
+            orders_list.sort(key=lambda x: x.get('id', 0), reverse=True)
+            
+        except Exception as e:
+            print(f"Error al cargar pedidos: {e}")
+    
+    return render(request, 'accounts/my_orders.html', {'orders': orders_list})
 
 
 @require_admin

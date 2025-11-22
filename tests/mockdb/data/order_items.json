@@ -1,21 +1,21 @@
 [
   {
     "id": 1,
-    "order": 1,
+    "order": 2,
     "product": 7,
     "price": "149.99",
     "quantity": 1
   },
   {
     "id": 2,
-    "order": 1,
+    "order": 2,
     "product": 8,
     "price": "59.90",
     "quantity": 1
   },
   {
     "id": 3,
-    "order": 1,
+    "order": 2,
     "product": 1,
     "price": "49.99",
     "quantity": 1
@@ -100,6 +100,27 @@
   {
     "id": 15,
     "order": 10,
+    "product": 1,
+    "price": "49.99",
+    "quantity": 1
+  },
+  {
+    "id": 16,
+    "order": 11,
+    "product": 2,
+    "price": "79.90",
+    "quantity": 1
+  },
+  {
+    "id": 17,
+    "order": 12,
+    "product": 2,
+    "price": "79.90",
+    "quantity": 1
+  },
+  {
+    "id": 18,
+    "order": 13,
     "product": 1,
     "price": "49.99",
     "quantity": 1
