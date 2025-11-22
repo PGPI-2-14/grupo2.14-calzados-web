@@ -8,8 +8,7 @@
         "address": "Calle Mayor 1",
         "city": "Madrid",
         "postal_code": "28001",
-        "password": "hashedpwd",
-        "username": "ana_sanchez"
+        "password": "hashedpwd"
     },
     {
         "id": 2,
@@ -20,8 +19,7 @@
         "address": "Avenida del Sol 12",
         "city": "Barcelona",
         "postal_code": "08002",
-        "password": "hashedpwd2",
-        "username": "carlos_garcia"
+        "password": "hashedpwd2"
     },
     {
         "id": 3,
@@ -32,8 +30,7 @@
         "address": "Paseo de la Reforma 45",
         "city": "Valencia",
         "postal_code": "46001",
-        "password": "hashedpwd3",
-        "username": "maria_lopez"
+        "password": "hashedpwd3"
     },
     {
         "id": 4,
@@ -44,8 +41,7 @@
         "address": "Calle de la Palma 7",
         "city": "Sevilla",
         "postal_code": "41001",
-        "password": "hashedpwd4",
-        "username": "jose_martinez"
+        "password": "hashedpwd4"
     },
     {
         "id": 1,
@@ -56,7 +52,6 @@
         "address": "Camino Real 3",
         "city": "Bilbao",
         "postal_code": "48001",
-        "password": "hashedpwd5",
-        "username": "lucia_fernandez"
+        "password": "hashedpwd5"
     }
 ]

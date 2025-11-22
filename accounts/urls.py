@@ -13,6 +13,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('logout/', views.logout_view, name='logout'),
     path('my-data/', views.my_data_view, name='my_data'),
+    path('my-orders/', views.my_orders_view, name='my_orders'),
     path('admin-lite/', views.admin_dashboard, name='admin_dashboard'),
     # Productos (admin-lite)
     path('admin-lite/products/', admin_views.product_list, name='admin_products'),

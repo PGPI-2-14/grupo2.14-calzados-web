@@ -9,11 +9,11 @@ Mi perfil
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-6 text-center">
-      <h2 class="mb-4">Hola, {{ user.first_name|default:user.username }}</h2>
+      <h2 class="mb-4">Hola, {{ user.first_name }} {{ user.last_name }}</h2>
 
       <div class="d-grid gap-3">
         <a href="{% url 'accounts:my_data' %}"  class="btn btn-outline-primary btn-lg">Mis datos</a>
-        <a href="#" class="btn btn-outline-secondary btn-lg">Mis pedidos</a>
+        <a href="{% url 'accounts:my_orders' %}" class="btn btn-outline-secondary btn-lg">Mis pedidos</a>
         <a href="{% url 'accounts:logout' %}" 
             class="btn btn-danger"
             onclick="return confirm('¿Seguro que quieres cerrar sesión?')">
