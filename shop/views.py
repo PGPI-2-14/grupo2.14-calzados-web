@@ -145,6 +145,44 @@ def product_search(request):
     products = Product.objects.filter(available=True)
     
     if query:
+        query_lower = query.lower()
+        matching_products = []
+        
+        for product in products:
+            # Search in name
+            if query_lower in getattr(product, 'name', '').lower():
+                matching_products.append(product)
+                continue
+            
+            # Search in description
+            if query_lower in getattr(product, 'description', '').lower():
+                matching_products.append(product)
+                continue
+            
+            # Search in brand name
+            brand = getattr(product, 'brand', None)
+            if brand and query_lower in getattr(brand, 'name', '').lower():
+                matching_products.append(product)
+                continue
+            
+            # Search in category name
+            category = getattr(product, 'category', None)
+            if category and query_lower in getattr(category, 'name', '').lower():
+                matching_products.append(product)
+                continue
+        
+        products = matching_products
+    
+    context = {
+        'products': products,
+        'search_query': query,
+        'categories': list(Category.objects.all()),
+    }
+    return render(request, 'shop/product/list.html', context)
+    query = request.GET.get('q', '')
+    products = Product.objects.filter(available=True)
+    
+    if query:
         products = products.filterSearch(name__icontains=query)    
     context = {
         'products': products,

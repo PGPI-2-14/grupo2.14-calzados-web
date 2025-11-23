@@ -45,6 +45,13 @@ Pago
                                             </div>
                                         </td>
                                         <td class="align-middle text-center">
+                                            {% if item.size %}
+                                                <span class="badge badge-secondary">{{ item.size }}</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="align-middle text-center">
                                             <span class="text-muted">${{ item.price }}</span>
                                         </td>
                                         <td class="align-middle text-center">
