@@ -15,11 +15,9 @@
                         <div class="site-logo">
                             <a href="{% url 'shop:home' %}" style="border: none; padding: 0;">
                                 <img src="{% static 'img/nexo.png' %}" alt="Nexo Shoes" style="max-height: 100px;">
-                            </a>
-                            <a>
-                                {% if request.session.mock_user_role == 'admin' %}
+                            {% if request.session.mock_user_role == 'admin' %}
                                 <span class="badge badge-warning ml-2" style="font-size: 0.6em; vertical-align: super;">ADMIN</span>
-                                {% endif %}
+                            {% endif %}
                             </a>
                         </div>
                     </div>
