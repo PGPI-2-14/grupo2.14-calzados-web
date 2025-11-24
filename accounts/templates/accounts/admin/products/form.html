@@ -120,7 +120,7 @@
                                         <option value="">Sin marca</option>
                                         {% for brand in brands %}
                                         <option value="{{ brand.id }}" 
-                                                {% if form.brand.value == brand.id|stringformat:"i" or product and product.brand_id == brand.id %}selected{% endif %}>
+                                                {% if current_brand_id and current_brand_id == brand.id %}selected{% endif %}>
                                             {{ brand.name }}
                                         </option>
                                         {% endfor %}

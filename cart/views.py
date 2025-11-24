@@ -3,19 +3,28 @@ from django.views.decorators.http import require_POST
 from shop.models import Product
 from .cart import Cart
 from .forms import CartAddProductForm
+from django.http import JsonResponse
 
 @require_POST
 def cart_add(request, product_id):
     cart = Cart(request)
-    # Pasar por Product.objects para forzar el uso del FakeManager en MockDB
     product = get_object_or_404(Product.objects, id=product_id)
     form = CartAddProductForm(request.POST)
+    
     if form.is_valid():
         cd = form.cleaned_data
         size = cd.get('size') or request.POST.get('size')
-        # Use price from form (offer price if available, else regular price)
         price = request.POST.get('price') or product.price
-        cart.add(product=product, quantity=cd['quantity'], update_quantity=cd['update'], size=size, price=price)
+        cart.add(product=product, quantity=cd['quantity'], 
+                update_quantity=cd['update'], size=size, price=price)
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'cart_count': len(cart),
+            'cart_total': str(cart.get_total_price())
+        })
+    
     return redirect('cart:cart_detail')
 
 @require_POST
@@ -31,20 +40,39 @@ def cart_update_quantity(request, product_id):
     
     product = get_object_or_404(Product.objects, id=product_id)
     cart.add(product=product, quantity=quantity, update_quantity=True, size=size)
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'cart_count': len(cart),
+            'cart_total': str(cart.get_total_price())
+        })
+    
     return redirect('cart:cart_detail')
 
 def cart_remove(request, product_id):
     cart = Cart(request)
     size = request.POST.get('size')
     cart.remove(product_id, size=size)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'cart_count': len(cart),
+            'cart_total': str(cart.get_total_price())
+        })
     return redirect('cart:cart_detail')
 
 def cart_clear(request):
     cart = Cart(request)
     cart.clear()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'cart_count': len(cart),
+            'cart_total': str(cart.get_total_price())
+        })
     return redirect('cart:cart_detail')
 
 def cart_detail(request):
     cart = Cart(request)
-    # No need to add forms anymore since we use +/- buttons
     return render(request, 'cart/detail.html', {'cart': cart})

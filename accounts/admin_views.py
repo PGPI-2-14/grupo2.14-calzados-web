@@ -182,6 +182,7 @@ def product_create(request: HttpRequest) -> HttpResponse:
 
 @require_admin
 def product_edit(request: HttpRequest, id: int) -> HttpResponse:
+    """Edit product with proper brand loading"""
     from shop.models import ProductSize
     product = Product.objects.get(id=id)
     sizes = list(ProductSize.objects.filter(product=product))
@@ -219,7 +220,6 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
         product.slug = request.POST.get('slug')
         product.description = request.POST.get('description', '')
         product.price = request.POST.get('price')
-        # Handle offer_price: if empty or 0, set to None to indicate no offer
         offer_price_val = request.POST.get('offer_price', '').strip()
         if offer_price_val and float(offer_price_val) > 0:
             product.offer_price = offer_price_val
@@ -268,9 +268,12 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
     categories = list(Category.objects.all())
     brands = list(Brand.objects.all())
     
-    # Get current category and brand IDs for template
     current_category_id = getattr(getattr(product, 'category', None), 'id', None)
-    current_brand_id = getattr(getattr(product, 'brand', None), 'id', None)
+    
+    product_brand = getattr(product, 'brand', None)
+    current_brand_id = None
+    if product_brand is not None:
+        current_brand_id = getattr(product_brand, 'id', None)
     
     return render(request, 'accounts/admin/products/form.html', {
         'product': product,
@@ -285,7 +288,7 @@ def product_edit(request: HttpRequest, id: int) -> HttpResponse:
 
 @require_admin
 def product_delete(request: HttpRequest, id: int) -> HttpResponse:
-    # Get product to delete
+    """Delete product and cleanup orphaned brands/categories"""
     try:
         product = Product.objects.get(id=id)
     except Exception:
@@ -295,20 +298,61 @@ def product_delete(request: HttpRequest, id: int) -> HttpResponse:
     if request.method == 'POST':
         product_name = getattr(product, 'name', '')
         
-        # Eliminar del FakeManager
-        remaining = [p for p in Product.objects.all() if getattr(p, 'id', None) != id]
-        Product.objects.bulk_set(remaining)
+        # Store category and brand before deletion
+        product_category = getattr(product, 'category', None)
+        product_brand = getattr(product, 'brand', None)
         
-        # Note: We keep categories and brands even if they have no products
-        # This allows reusing them for new products
+        product_category_id = getattr(product_category, 'id', None) if product_category else None
+        product_brand_id = getattr(product_brand, 'id', None) if product_brand else None
+        
+        # Delete product from list
+        remaining_products = [p for p in Product.objects.all() if getattr(p, 'id', None) != id]
+        Product.objects.bulk_set(remaining_products)
+        
+        # Check if category should be deleted
+        if product_category_id:
+            category_in_use = False
+            for p in remaining_products:
+                p_cat = getattr(p, 'category', None)
+                if p_cat and getattr(p_cat, 'id', None) == product_category_id:
+                    category_in_use = True
+                    break
+            
+            if not category_in_use:
+                remaining_categories = [c for c in Category.objects.all() 
+                                       if getattr(c, 'id', None) != product_category_id]
+                Category.objects.bulk_set(remaining_categories)
+                save_categories_to_fixture()
+                print(f"[admin] Deleted orphaned category: {getattr(product_category, 'name', 'Unknown')}")
+        
+        # Check if brand should be deleted
+        if product_brand_id:
+            brand_in_use = False
+            for p in remaining_products:
+                p_brand = getattr(p, 'brand', None)
+                if p_brand and getattr(p_brand, 'id', None) == product_brand_id:
+                    brand_in_use = True
+                    break
+            
+            if not brand_in_use:
+                remaining_brands = [b for b in Brand.objects.all() 
+                                   if getattr(b, 'id', None) != product_brand_id]
+                Brand.objects.bulk_set(remaining_brands)
+                save_brands_to_fixture()
+                print(f"[admin] Deleted orphaned brand: {getattr(product_brand, 'name', 'Unknown')}")
         
         save_products_to_fixture()
         messages.success(request, f'Producto "{product_name}" eliminado exitosamente.')
+        
+        try:
+            from tests.mockdb.patcher import MockDB
+            MockDB().apply()
+        except Exception:
+            pass
+        
         return redirect(reverse('accounts:admin_products'))
     
-    # Mostrar confirmación
     return render(request, 'accounts/admin/products/confirm_delete.html', {'product': product})
-
 
 @require_admin
 def customer_list(request: HttpRequest) -> HttpResponse:
