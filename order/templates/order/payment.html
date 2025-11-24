@@ -47,7 +47,7 @@ Pago
                             </div>
 
                             <button id="submit-button" type="submit" class="btn btn-success btn-lg btn-block py-3 mt-3">
-                                <span class="icon-lock mr-2"></span>Pagar ${{ order.get_total_cost|floatformat:"2" }}
+                                <span class="icon-lock mr-2"></span>Pagar {{ order.get_total_cost|floatformat:"2" }}€
                             </button>
                         </form>
                     </div>
@@ -71,7 +71,7 @@ Pago
                                             <span class="badge badge-secondary badge-sm">{{ item.quantity }}x</span>
                                         </td>
                                         <td class="align-middle text-right">
-                                            <strong>${{ item.get_cost }}</strong>
+                                            <strong>{{ item.get_cost }}€</strong>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -81,7 +81,7 @@ Pago
                         <div class="border-top pt-3">
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Subtotal</span>
-                                <span>${{ order.get_total_cost|floatformat:"2" }}</span>
+                                <span>{{ order.get_total_cost|floatformat:"2" }}€</span>
                             </div>
                             <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
                                 <span class="text-muted">Envío</span>
@@ -89,7 +89,7 @@ Pago
                             </div>
                             <div class="d-flex justify-content-between">
                                 <strong class="h5 mb-0">Total</strong>
-                                <strong class="h5 mb-0 text-success">${{ order.get_total_cost|floatformat:"2" }}</strong>
+                                <strong class="h5 mb-0 text-success">{{ order.get_total_cost|floatformat:"2" }}€</strong>
                             </div>
                         </div>
                     </div>
@@ -143,7 +143,7 @@ braintree.dropin.create({
       if (requestPaymentMethodErr) {
         console.error('Error requesting payment method:', requestPaymentMethodErr);
         submitButton.disabled = false;
-        submitButton.innerHTML = '<span class="icon-lock mr-2"></span>Pagar ${{ order.get_total_cost|floatformat:"2" }}';
+        submitButton.innerHTML = '<span class="icon-lock mr-2"></span>Pagar {{ order.get_total_cost|floatformat:"2" }}€';
         return;
       }
 

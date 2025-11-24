@@ -19,6 +19,48 @@
       </div>
     </div>  
     
+    <!-- Admin Controls -->
+    {% if request.session.mock_user_role == 'admin' %}
+    <div class="container mt-3">
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <span><strong>Modo Admin:</strong> Puedes editar o eliminar este producto</span>
+            <div>
+                <a href="{% url 'accounts:admin_product_edit' product.id %}" class="btn btn-sm btn-warning mr-2">
+                    <span class="icon-edit mr-1"></span>Editar Producto
+                </a>
+                <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteModal">
+                    <span class="icon-delete mr-1"></span>Eliminar Producto
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar el producto <strong>{{ product.name }}</strong>?</p>
+                    <p class="text-muted small">Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <form method="post" action="{% url 'accounts:admin_product_delete' product.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <div class="site-section">
       <div class="container">
         <div class="row">
@@ -128,8 +170,7 @@
               </button>
               
             {% else %}
-              <!-- Normal product form -->
-              <form action="{% url 'cart:cart_add' product.id %}" method="post" onsubmit="event.preventDefault(); fetch(this.action, {method: 'POST', body: new FormData(this), headers: {'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value}}).then(() => {var btn = this.querySelector('button[type=submit]'); btn.innerHTML = '<span class=\'icon-check mr-2\'></span>Añadido al carrito'; btn.classList.remove('btn-primary'); btn.classList.add('btn-success'); setTimeout(() => {btn.innerHTML = '<span class=\'icon-shopping_cart mr-2\'></span>Añadir al carrito'; btn.classList.remove('btn-success'); btn.classList.add('btn-primary');}, 2000);});">
+              <form action="{% url 'cart:cart_add' product.id %}" method="post" id="add-to-cart-form">
                 {% csrf_token %}
                 
                 <input type="hidden" name="price" value="{% if product.offer_price and product.offer_price < product.price %}{{ product.offer_price }}{% else %}{{ product.price }}{% endif %}">
@@ -200,35 +241,111 @@
     </div>
 
 <script>
-  // enable/disable add button and show stock per selected size
-  function onSizeSelected(radio) {
+// ===== AJAX CART UPDATE =====
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('add-to-cart-form');
+    if (!form) return;
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const btn = form.querySelector('button[type=submit]');
+        const originalHTML = btn.innerHTML;
+        
+        // Show loading state
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2"></span>Añadiendo...';
+        btn.disabled = true;
+        
+        // Send AJAX request
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update cart count in navbar
+                const cartCount = document.querySelector('.site-cart .count');
+                if (cartCount) {
+                    cartCount.textContent = data.cart_count;
+                    
+                    // Add animation
+                    cartCount.style.transform = 'scale(1.5)';
+                    cartCount.style.transition = 'transform 0.3s';
+                    setTimeout(() => {
+                        cartCount.style.transform = 'scale(1)';
+                    }, 300);
+                }
+                
+                // Show success state
+                btn.innerHTML = '<span class="icon-check mr-2"></span>¡Añadido!';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-primary');
+                    btn.disabled = false;
+                }, 2000);
+            } else {
+                // Error state
+                btn.innerHTML = '<span class="icon-error mr-2"></span>Error';
+                btn.classList.add('btn-danger');
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('btn-danger');
+                    btn.disabled = false;
+                }, 2000);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = '<span class="icon-error mr-2"></span>Error';
+            btn.classList.add('btn-danger');
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('btn-danger');
+                btn.disabled = false;
+            }, 2000);
+        });
+    });
+});
+
+// ===== SIZE SELECTION =====
+function onSizeSelected(radio) {
     var stock = parseInt(radio.dataset.stock || '0', 10);
     var badge = document.getElementById('stock-badge');
     var addBtn = document.getElementById('add-to-cart-btn');
     var qtyInput = document.querySelector('input[name=quantity]');
 
     if (stock > 0) {
-      badge.classList.remove('badge-danger', 'badge-secondary');
-      badge.classList.add('badge-success');
-      badge.textContent = 'En stock';
-      if (addBtn) addBtn.disabled = false;
-      if (qtyInput) { qtyInput.value = 1; qtyInput.max = stock; }
+        badge.classList.remove('badge-danger', 'badge-secondary');
+        badge.classList.add('badge-success');
+        badge.textContent = 'En stock';
+        if (addBtn) addBtn.disabled = false;
+        if (qtyInput) { qtyInput.value = 1; qtyInput.max = stock; }
     } else {
-      badge.classList.remove('badge-success', 'badge-secondary');
-      badge.classList.add('badge-danger');
-      badge.textContent = 'Agotado';
-      if (addBtn) addBtn.disabled = true;
-      if (qtyInput) { qtyInput.value = 0; qtyInput.max = 0; }
+        badge.classList.remove('badge-success', 'badge-secondary');
+        badge.classList.add('badge-danger');
+        badge.textContent = 'Agotado';
+        if (addBtn) addBtn.disabled = true;
+        if (qtyInput) { qtyInput.value = 0; qtyInput.max = 0; }
     }
-  }
+}
 
-  // set initial quantity max for products without sizes
-  document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     var hasSizes = {{ sizes|length }} > 0;
     if (!hasSizes) {
-      var qtyInput = document.querySelector('input[name=quantity]');
-      if (qtyInput) qtyInput.max = {{ product.stock }};
+        var qtyInput = document.querySelector('input[name=quantity]');
+        if (qtyInput) qtyInput.max = {{ product.stock }};
     }
-  });
+});
 </script>
 {% endblock %}

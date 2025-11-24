@@ -50,7 +50,7 @@
                               <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded shadow-lg" style="max-width: 450px; max-height: 400px; object-fit: contain;">
                               <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-10 rounded px-2 py-1" style="max-width: 200px; margin: 0 auto;">
                                   <h5 class="mb-1" style="font-size: 0.9rem;">{{ product.name }}</h5>
-                                  <p class="mb-0" style="font-size: 0.85rem;">${{ product.price }}</p>
+                                  <p class="mb-0" style="font-size: 0.85rem;">{{ product.price }}€</p>
                               </div>
                           </div>
                             {% endfor %}
@@ -91,12 +91,12 @@
                             <div class="d-flex justify-content-between align-items-center mt-auto">
                                     {% if product.offer_price and product.offer_price < product.price %}
                                         <div>
-                                            <h5 class="text-primary mb-0">${{ product.offer_price }}</h5>
-                                            <small class="text-muted"><del>${{ product.price }}</del></small>
+                                            <h5 class="text-primary mb-0">{{ product.offer_price }}€</h5>
+                                            <small class="text-muted"><del>{{ product.price }}€</del></small>
                                         </div>
                                         <span class="badge badge-warning">Oferta</span>
                                     {% else %}
-                                        <strong class="text-primary">${{ product.price }}</strong>
+                                        <strong class="text-primary">{{ product.price }}€</strong>
                                     {% endif %}
                                 </div>
                         </div>

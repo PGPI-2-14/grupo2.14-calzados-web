@@ -4,6 +4,24 @@
 {% if category %}{{ category.name }}{% else %}Products{% endif %}
 {% endblock %}
 {% block content %}
+
+<!-- Admin Controls -->
+{% if request.session.mock_user_role == 'admin' %}
+<div class="container mt-3">
+    <div class="alert alert-success d-flex justify-content-between align-items-center">
+        <span><strong>Modo Admin:</strong> Gestión de productos</span>
+        <div>
+            <a href="{% url 'accounts:admin_product_create' %}" class="btn btn-sm btn-success">
+                <span class="icon-add mr-1"></span>Añadir Producto
+            </a>
+            <a href="{% url 'accounts:admin_orders' %}" class="btn btn-sm btn-info ml-2">
+                <span class="icon-list mr-1"></span>Ver Pedidos
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% if search_query %}
 <div class="bg-light py-3">
     <div class="container">
@@ -40,7 +58,26 @@
                 <div class="row mb-5">
                     {% for product in products %}
                     <div class="col-sm-6 col-lg-4 mb-4" data-aos="fade-up">
-                        <div class="card border-0 shadow-sm h-100 product-card">
+                        <div class="card border-0 shadow-sm h-100 product-card position-relative">
+                            <!-- Admin Quick Actions -->
+                            {% if request.session.mock_user_role == 'admin' %}
+                            <div class="position-absolute" style="top: 10px; right: 10px; z-index: 10;">
+                                <a href="{% url 'accounts:admin_product_edit' product.id %}" 
+                                   class="btn btn-sm btn-warning mr-1" 
+                                   title="Editar"
+                                   style="opacity: 0.9;">
+                                    <span class="icon-edit"></span>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger" 
+                                        title="Eliminar"
+                                        style="opacity: 0.9;"
+                                        onclick="confirmDelete({{ product.id }}, '{{ product.name }}')">
+                                    <span class="icon-delete"></span>
+                                </button>
+                            </div>
+                            {% endif %}
+                            
                             <a href="{{ product.get_absolute_url }}" class="position-relative overflow-hidden">
                                 <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top" style="height: 250px; object-fit: cover; transition: transform 0.3s;">
                             </a>
@@ -52,12 +89,15 @@
                                 <div class="d-flex justify-content-between align-items-center mt-auto">
                                     {% if product.offer_price and product.offer_price < product.price %}
                                         <div>
-                                            <h5 class="text-primary mb-0">${{ product.offer_price }}</h5>
-                                            <small class="text-muted"><del>${{ product.price }}</del></small>
+                                            <h5 class="text-primary mb-0">{{ product.offer_price }}€</h5>
+                                            <small class="text-muted"><del>{{ product.price }}€</del></small>
                                         </div>
                                         <span class="badge badge-warning">Oferta</span>
+                                    {% elif product.stock <= 0 %}
+                                        <h5 class="text-primary">{{ product.price }}€</h5>
+                                        <span class="badge badge-danger">Agotado</span>
                                     {% else %}
-                                        <strong class="text-primary">${{ product.price }}</strong>
+                                        <strong class="text-primary">{{ product.price }}€</strong>
                                     {% endif %}
                                 </div>
                             </div>
@@ -172,11 +212,36 @@
                             </div>
                         </div>
 
-                        <a href="{% url 'shop:product_list' %}" class="btn btn-outline-danger btn-sm btn-block">
+                        <a href="{% url 'shop:product_list' %}{% if category %}{{ category.slug }}/{% endif %}" class="btn btn-outline-danger btn-sm btn-block">
                             <span class="icon-clear mr-1"></span>Limpiar filtros
                         </a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1" role="dialog" aria-labelledby="deleteProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteProductModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el producto <strong id="productNameToDelete"></strong>?</p>
+                <p class="text-muted small">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form method="post" id="deleteProductForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
             </div>
         </div>
     </div>
@@ -204,7 +269,6 @@ document.querySelectorAll('input[type="checkbox"][data-filter-type]').forEach(fu
         params.delete('brand');
         params.delete('color');
         params.delete('material');
-        params.delete('category');
         
         // Add selected filters back
         for (var type in filtersByType) {
@@ -220,6 +284,13 @@ document.querySelectorAll('input[type="checkbox"][data-filter-type]').forEach(fu
         window.location.href = newUrl;
     });
 });
+
+// Delete confirmation function
+function confirmDelete(productId, productName) {
+    document.getElementById('productNameToDelete').textContent = productName;
+    document.getElementById('deleteProductForm').action = '/accounts/admin-lite/products/' + productId + '/delete/';
+    $('#deleteProductModal').modal('show');
+}
 </script>
 
 {% endblock %}

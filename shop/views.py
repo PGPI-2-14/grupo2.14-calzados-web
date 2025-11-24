@@ -70,12 +70,28 @@ def product_detail(request, id, slug):
     
     # Check if product has stock but no sizes - make it unavailable
     has_sizes = len(sizes) > 0
-    has_stock = product.stock > 0
+    # Convert stock to int for comparison
+    try:
+        product_stock = int(getattr(product, 'stock', 0))
+    except (ValueError, TypeError):
+        product_stock = 0
+    
+    has_stock = product_stock > 0
     is_available = product.available and (has_sizes or has_stock)
     
     # If product has stock but no sizes, mark as unavailable
     if has_stock and not has_sizes:
         is_available = False
+    
+    # Determine stock status message
+    if not is_available:
+        stock_status = 'agotado'
+    elif has_sizes:
+        # Check if any size has stock
+        total_size_stock = sum(int(getattr(s, 'stock', 0)) for s in sizes)
+        stock_status = 'disponible' if total_size_stock > 0 else 'agotado'
+    else:
+        stock_status = 'disponible' if has_stock else 'agotado'
     
     context = {
         'product': product,
@@ -83,6 +99,7 @@ def product_detail(request, id, slug):
         'sizes': sizes,
         'is_available': is_available,
         'has_sizes': has_sizes,
+        'stock_status': stock_status,
     }
     return render(request, 'shop/product/detail.html', context)
 
@@ -124,6 +141,44 @@ def contact(request):
 
 
 def product_search(request):
+    query = request.GET.get('q', '')
+    products = Product.objects.filter(available=True)
+    
+    if query:
+        query_lower = query.lower()
+        matching_products = []
+        
+        for product in products:
+            # Search in name
+            if query_lower in getattr(product, 'name', '').lower():
+                matching_products.append(product)
+                continue
+            
+            # Search in description
+            if query_lower in getattr(product, 'description', '').lower():
+                matching_products.append(product)
+                continue
+            
+            # Search in brand name
+            brand = getattr(product, 'brand', None)
+            if brand and query_lower in getattr(brand, 'name', '').lower():
+                matching_products.append(product)
+                continue
+            
+            # Search in category name
+            category = getattr(product, 'category', None)
+            if category and query_lower in getattr(category, 'name', '').lower():
+                matching_products.append(product)
+                continue
+        
+        products = matching_products
+    
+    context = {
+        'products': products,
+        'search_query': query,
+        'categories': list(Category.objects.all()),
+    }
+    return render(request, 'shop/product/list.html', context)
     query = request.GET.get('q', '')
     products = Product.objects.filter(available=True)
     

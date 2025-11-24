@@ -1,0 +1,161 @@
+{% extends "accounts/admin_base.html" %}
+{% load static %}
+
+{% block title %}Pedido {{ order.order_number }} - Detalle{% endblock %}
+
+{% block admin_section %}Detalle del Pedido{% endblock %}
+
+{% block admin_content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2 class="h3">Pedido {{ order.order_number }}</h2>
+        <p class="text-muted">Creado el {{ order.created|date:"d/m/Y H:i" }}</p>
+    </div>
+    <div class="col-md-4 text-right">
+        <a href="{% url 'accounts:admin_orders' %}" class="btn btn-outline-secondary">
+            <span class="icon-arrow_back mr-1"></span>Volver a Pedidos
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Order Items -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Artículos del Pedido</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-right">Precio</th>
+                                <th class="text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ item.product.image.url }}" 
+                                             alt="{{ item.product.name }}" 
+                                             class="img-fluid rounded mr-3" 
+                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                        <div>
+                                            <strong>{{ item.product.name }}</strong>
+                                            {% if item.size %}
+                                            <br><small class="text-muted">Talla: {{ item.size }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center align-middle">{{ item.quantity }}</td>
+                                <td class="text-right align-middle">{{ item.price|floatformat:2 }}€</td>
+                                <td class="text-right align-middle"><strong>{{ item.get_cost|floatformat:2 }}€</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="bg-light">
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Subtotal:</strong></td>
+                                <td class="text-right"><strong>{{ order.subtotal|floatformat:2 }}€</strong></td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-right">Envío:</td>
+                                <td class="text-right">{{ order.shipping_cost|floatformat:2 }}€</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                                <td class="text-right"><strong class="text-primary">{{ order.total|floatformat:2 }}€</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Info & Actions -->
+    <div class="col-md-4">
+        <!-- Update Status -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Actualizar Estado</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'accounts:admin_order_update_status' order.id %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Estado del Pedido</label>
+                        <select name="status" class="form-control">
+                            <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pendiente</option>
+                            <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Procesando</option>
+                            <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Enviado</option>
+                            <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Entregado</option>
+                            <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" 
+                                   id="paid" name="paid" {% if order.paid %}checked{% endif %}>
+                            <label class="custom-control-label" for="paid">Pedido Pagado</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <span class="icon-save mr-1"></span>Actualizar
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Información del Cliente</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>{{ order.first_name }} {{ order.last_name }}</strong></p>
+                <p class="mb-2"><span class="icon-email mr-1"></span>{{ order.email }}</p>
+                <p class="mb-2"><span class="icon-phone mr-1"></span>{{ order.phone }}</p>
+                {% if order.shipping_method == 'home' %}
+                <hr>
+                <p class="mb-1"><strong>Dirección de Envío:</strong></p>
+                <p class="mb-0">{{ order.address }}<br>{{ order.city }}, {{ order.postal_code }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Order Details -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Detalles del Pedido</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted">Método de Envío</small>
+                    <p class="mb-0"><strong>{{ order.get_shipping_method_display }}</strong></p>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Método de Pago</small>
+                    <p class="mb-0"><strong>{{ order.get_payment_method_display }}</strong></p>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Estado del Pago</small>
+                    <p class="mb-0">
+                        {% if order.paid %}
+                        <span class="badge badge-success">Pagado</span>
+                        {% else %}
+                        <span class="badge badge-warning">Pendiente</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
