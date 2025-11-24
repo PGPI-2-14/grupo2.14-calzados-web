@@ -623,3 +623,49 @@ def _to_fake_user_from_customer(u: Dict[str, Any]) -> FakeUserAccount:
         last_name=u.get('last_name', ''),
         is_active=bool(u.get('is_active', True)),
     )
+  
+def save_categories_to_fixture() -> None:
+    """Vuelca el estado actual de Category.objects a tests/mockdb/data/categories.json."""
+    from shop.models import Category
+
+    base = Path(settings.BASE_DIR)
+    if base.name == "config":
+        base = base.parent
+    data_dir = base / "tests" / "mockdb" / "data"
+    path = data_dir / "categories.json"
+
+    def to_dict(c: Any) -> Dict[str, Any]:
+        return {
+            "id": int(getattr(c, 'id', 0) or 0),
+            "name": getattr(c, 'name', ''),
+            "slug": getattr(c, 'slug', ''),
+        }
+
+    items = [to_dict(c) for c in Category.objects.all()]
+    data_dir.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, indent=2)
+    print(f"[mockdb] 💾 Guardadas {len(items)} categorías en {path}")
+
+def save_brands_to_fixture() -> None:
+    """Vuelca el estado actual de Brand.objects a tests/mockdb/data/brands.json."""
+    from shop.models import Brand
+
+    base = Path(settings.BASE_DIR)
+    if base.name == "config":
+        base = base.parent
+    data_dir = base / "tests" / "mockdb" / "data"
+    path = data_dir / "brands.json"
+
+    def to_dict(b: Any) -> Dict[str, Any]:
+        return {
+            "id": int(getattr(b, 'id', 0) or 0),
+            "name": getattr(b, 'name', ''),
+            "image_url": getattr(getattr(b, 'image', None), 'url', ''),
+        }
+
+    items = [to_dict(b) for b in Brand.objects.all()]
+    data_dir.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, indent=2)
+    print(f"[mockdb] 💾 Guardadas {len(items)} marcas en {path}")

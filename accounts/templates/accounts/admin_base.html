@@ -1,0 +1,489 @@
+{% extends "shop/base/base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Admin Navigation -->
+<div class="bg-dark py-2">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <nav class="navbar navbar-expand-lg navbar-dark p-0">
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#adminNavbar">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="adminNavbar">
+                        <ul class="navbar-nav mr-auto">
+                            <li class="nav-item {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+                                <a class="nav-link" href="{% url 'accounts:admin_dashboard' %}">
+                                    <span class="icon-dashboard mr-1"></span>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown {% if 'admin_products' in request.resolver_match.url_name %}active{% endif %}">
+                                <a class="nav-link dropdown-toggle" href="#" id="productsDropdown" role="button" data-toggle="dropdown">
+                                    <span class="icon-store mr-1"></span>Productos
+                                </a>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="{% url 'accounts:admin_products' %}">
+                                        <span class="icon-list mr-2"></span>Gestionar Productos
+                                    </a>
+                                    <a class="dropdown-item" href="{% url 'accounts:admin_product_create' %}">
+                                        <span class="icon-add mr-2"></span>Nuevo Producto
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="{% url 'shop:product_list' %}" target="_blank">
+                                        <span class="icon-visibility mr-2"></span>Ver Tienda
+                                    </a>
+                                </div>
+                            </li>
+                            <li class="nav-item dropdown {% if 'admin_orders' in request.resolver_match.url_name %}active{% endif %}">
+                                <a class="nav-link dropdown-toggle" href="#" id="ordersDropdown" role="button" data-toggle="dropdown">
+                                    <span class="icon-receipt mr-1"></span>Pedidos
+                                </a>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="{% url 'accounts:admin_orders' %}">
+                                        <span class="icon-list mr-2"></span>Todos los Pedidos
+                                    </a>
+                                    <a class="dropdown-item" href="{% url 'accounts:admin_orders' %}?status=pending">
+                                        <span class="icon-pending mr-2"></span>Pedidos Pendientes
+                                    </a>
+                                </div>
+                            </li>
+                            <li class="nav-item dropdown {% if 'admin_customers' in request.resolver_match.url_name %}active{% endif %}">
+                                <a class="nav-link dropdown-toggle" href="#" id="customersDropdown" role="button" data-toggle="dropdown">
+                                    <span class="icon-people mr-1"></span>Clientes
+                                </a>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="{% url 'accounts:admin_customers' %}">
+                                        <span class="icon-list mr-2"></span>Gestionar Clientes
+                                    </a>
+                                    <a class="dropdown-item" href="{% url 'accounts:admin_customer_create' %}">
+                                        <span class="icon-person_add mr-2"></span>Nuevo Cliente
+                                    </a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Breadcrumb -->
+<div class="bg-light py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 mb-0">
+                <a href="{% url 'shop:product_list' %}">
+                    <span class="icon-home mr-1"></span>Inicio
+                </a>
+                <span class="mx-2 mb-0">/</span>
+                <a href="{% url 'accounts:admin_dashboard' %}">Admin</a>
+                <span class="mx-2 mb-0">/</span>
+                <strong class="text-black">{% block admin_section %}{% endblock %}</strong>
+                
+                <!-- Quick Stats -->
+                <div class="float-right">
+                    <small class="text-muted mr-3">
+                        <span class="icon-person mr-1"></span>
+                        {{ user.first_name }} {{ user.last_name }}
+                    </small>
+                    <span class="badge badge-primary">
+                        <span class="icon-security mr-1"></span>
+                        Admin
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="site-section">
+    <div class="container">
+        <!-- Notifications -->
+        {% if messages %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <div class="d-flex align-items-center">
+                        {% if message.tags == 'success' %}
+                        <span class="icon-check_circle mr-2"></span>
+                        {% elif message.tags == 'error' or message.tags == 'danger' %}
+                        <span class="icon-error mr-2"></span>
+                        {% elif message.tags == 'warning' %}
+                        <span class="icon-warning mr-2"></span>
+                        {% else %}
+                        <span class="icon-info mr-2"></span>
+                        {% endif %}
+                        <div>{{ message }}</div>
+                    </div>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                {% block admin_page_header %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h2 mb-1">{% block admin_title %}{% endblock %}</h1>
+                        <p class="text-muted mb-0">{% block admin_subtitle %}{% endblock %}</p>
+                    </div>
+                    <div>
+                        {% block admin_actions %}{% endblock %}
+                    </div>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+
+        <!-- Admin Content -->
+        {% block admin_content %}{% endblock %}
+    </div>
+</div>
+
+<!-- Quick Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <span class="icon-help mr-2"></span>
+                    Ayuda del Panel de Administración
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Gestión de Productos</h6>
+                        <ul class="small">
+                            <li>Crear, editar y eliminar productos</li>
+                            <li>Gestionar inventario y precios</li>
+                            <li>Configurar productos destacados</li>
+                            <li>Subir imágenes de productos</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Gestión de Pedidos</h6>
+                        <ul class="small">
+                            <li>Ver y gestionar todos los pedidos</li>
+                            <li>Actualizar estados de pedidos</li>
+                            <li>Ver detalles completos de pedidos</li>
+                            <li>Dashboard de ventas y analytics</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6>Gestión de Clientes</h6>
+                        <ul class="small">
+                            <li>Ver lista de clientes registrados</li>
+                            <li>Crear y editar cuentas de cliente</li>
+                            <li>Gestionar roles (Admin/Cliente)</li>
+                            <li>Ver historial de pedidos por cliente</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <a href="mailto:nexussh03s@gmail.com" class="btn btn-primary">
+                    <span class="icon-email mr-2"></span>Contactar Soporte
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Access Panel -->
+<div class="position-fixed" style="bottom: 20px; right: 20px; z-index: 1030;">
+    <div class="btn-group-vertical">
+        <button class="btn btn-primary btn-lg rounded-circle shadow" data-toggle="modal" data-target="#helpModal" 
+                title="Ayuda" style="width: 50px; height: 50px;">
+            <span class="icon-help"></span>
+        </button>
+        <a href="{% url 'shop:product_list' %}" class="btn btn-success btn-lg rounded-circle shadow mt-2 justify-content-center align-items-center"
+           title="Ir a la Tienda" style="width: 50px; height: 50px;">
+            <span class="icon-shopping_cart"></span>
+        </a>
+    </div>
+</div>
+
+<style>
+/* Admin-specific styles */
+.admin-navbar .nav-link {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.admin-navbar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.admin-navbar .dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.admin-navbar .dropdown-item {
+    padding: 0.5rem 1rem;
+    font-weight: 400;
+}
+
+.admin-navbar .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Quick actions floating buttons */
+.btn-rounded {
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* Breadcrumb improvements */
+.bg-light .breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+    color: #6c757d;
+}
+
+/* Alert improvements */
+.alert {
+    border: none;
+    border-left: 4px solid;
+}
+
+.alert-success {
+    border-left-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+    background-color: #fff8f8;
+}
+
+.alert-warning {
+    border-left-color: #ffc107;
+    background-color: #fffef0;
+}
+
+.alert-info {
+    border-left-color: #17a2b8;
+    background-color: #f0fdff;
+}
+
+/* Table improvements for admin */
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+}
+
+/* Card improvements */
+.card {
+    border: 1px solid #e3e6f0;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    font-weight: 600;
+}
+
+/* Badge improvements */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Progress bar improvements */
+.progress {
+    height: 8px;
+    background-color: #eaecf4;
+}
+
+.progress-bar {
+    border-radius: 4px;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .admin-navbar .navbar-nav {
+        text-align: center;
+    }
+    
+    .admin-navbar .dropdown-menu {
+        text-align: left;
+    }
+    
+    .float-right {
+        float: none !important;
+        text-align: center;
+        margin-top: 10px;
+    }
+    
+    .position-fixed {
+        display: none; /* Hide floating buttons on mobile */
+    }
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Status indicators */
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.status-active { background-color: #28a745; }
+.status-inactive { background-color: #6c757d; }
+.status-pending { background-color: #ffc107; }
+.status-warning { background-color: #fd7e14; }
+</style>
+
+<script>
+// Admin base JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-dismiss alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            if (alert && alert.classList.contains('alert-dismissible')) {
+                alert.querySelector('.close').click();
+            }
+        }, 5000);
+    });
+
+    // Add loading state to forms
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2"></span>Procesando...';
+                submitBtn.disabled = true;
+                this.classList.add('loading');
+            }
+        });
+    });
+
+    // Update current time every minute
+    function updateCurrentTime() {
+        const now = new Date();
+        const timeElement = document.querySelector('.current-time');
+        if (timeElement) {
+            timeElement.textContent = now.toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    }
+    
+    // Update time immediately and then every minute
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 60000);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + H for help
+        if (e.ctrlKey && e.key === 'h') {
+            e.preventDefault();
+            $('#helpModal').modal('show');
+        }
+        
+        // Ctrl + D for dashboard
+        if (e.ctrlKey && e.key === 'd') {
+            e.preventDefault();
+            window.location.href = "{% url 'accounts:admin_dashboard' %}";
+        }
+        
+        // Ctrl + S for shop
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            window.location.href = "{% url 'shop:product_list' %}";
+        }
+    });
+
+    // Print keyboard shortcuts in console for admin users
+    console.log(`
+Admin Panel Keyboard Shortcuts:
+Ctrl + H - Ayuda
+Ctrl + D - Dashboard
+Ctrl + S - Tienda
+    `);
+});
+
+// Utility functions for admin pages
+const AdminUtils = {
+    // Confirm deletion with custom message
+    confirmDelete: function(message = '¿Estás seguro de que deseas eliminar este elemento?') {
+        return confirm(message);
+    },
+    
+    // Format currency
+    formatCurrency: function(amount) {
+        return new Intl.NumberFormat('es-ES', {
+            style: 'currency',
+            currency: 'USD'
+        }).format(amount);
+    },
+    
+    // Format date
+    formatDate: function(dateString) {
+        return new Date(dateString).toLocaleDateString('es-ES');
+    },
+    
+    // Show loading overlay
+    showLoading: function() {
+        const overlay = document.createElement('div');
+        overlay.className = 'position-fixed top-0 left-0 w-100 h-100 d-flex align-items-center justify-content-center';
+        overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+        overlay.style.zIndex = '9999';
+        overlay.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                <p class="mt-2 text-muted">Procesando...</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        return overlay;
+    },
+    
+    // Hide loading overlay
+    hideLoading: function(overlay) {
+        if (overlay && overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+        }
+    }
+};
+</script>
+{% endblock %}

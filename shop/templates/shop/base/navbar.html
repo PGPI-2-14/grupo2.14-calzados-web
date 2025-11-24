@@ -1,3 +1,4 @@
+{% load static %}
 <header class="site-navbar" role="banner">
         <div class="site-navbar-top">
             <div class="container">
@@ -12,21 +13,33 @@
 
                     <div class="col-12 mb-3 mb-md-0 col-md-4 order-1 order-md-2 text-center">
                         <div class="site-logo">
-                            <a href="#" class="js-logo-clone">Nexo-Shoes</a>
+                            <a href="{% url 'shop:home' %}" style="border: none; padding: 0;">
+                                <img src="{% static 'img/nexo.png' %}" alt="Nexo Shoes" style="max-height: 100px;">
+                            {% if request.session.mock_user_role == 'admin' %}
+                                <span class="badge badge-warning ml-2" style="font-size: 0.6em; vertical-align: super;">ADMIN</span>
+                            {% endif %}
+                            </a>
                         </div>
                     </div>
 
                     <div class="col-6 col-md-4 order-3 order-md-3 text-right">
                         <div class="site-top-icons">
                             <ul>
+                                {% if request.session.mock_user_role == 'admin' %}
+                                <li>
+                                    <a href="{% url 'accounts:admin_products' %}" title="Panel Admin">
+                                        <span class="icon icon-dashboard"></span>
+                                    </a>
+                                </li>
+                                {% endif %}
                                 <li>
                                     {% if user.is_authenticated %}
                                         <a href="{% url 'accounts:profile' %}">
-                                            <span class="icon icon-person"></span> {{ user.username }}
+                                            <span class="icon icon-person"></span> {{ user.first_name }} {{ user.last_name }}
                                         </a>
                                     {% elif request.session.mock_user %}
                                         <a href="{% url 'accounts:profile' %}">
-                                            <span class="icon icon-person"></span> {{ request.session.mock_user.username }}
+                                            <span class="icon icon-person"></span> {{ request.session.mock_user.first_name }} {{ request.session.mock_user.last_name }}
                                         </a>
                                     {% else %}
                                         <a href="{% url 'accounts:login' %}">
@@ -40,7 +53,7 @@
                                         <span class="count">
                                         {% with total_items=cart|length %}
                                             {% if cart|length > 0 %}
-                                                {{ total_items|pluralize }}
+                                                {{ total_items }}
                                             {% else %}
                                                 0
                                             {% endif %}
@@ -64,6 +77,19 @@
                     <li><a href="{% url 'shop:product_list' %}">Tienda</a></li>
                     <li><a href="{% url 'shop:about' %}">Sobre nosotros</a></li>
                     <li><a href="{% url 'shop:contact' %}">Contacto</a></li>
+                    {% if request.session.mock_user_role == 'admin' %}
+                    <li class="has-children">
+                        <a href="#">
+                            <span class="icon-dashboard mr-1"></span>Admin
+                        </a>
+                        <ul class="dropdown">
+                            <li><a href="{% url 'accounts:admin_products' %}">Productos</a></li>
+                            <li><a href="{% url 'accounts:admin_orders' %}">Pedidos</a></li>
+                            <li><a href="{% url 'accounts:admin_customers' %}">Clientes</a></li>
+                            <li><a href="{% url 'accounts:admin_sales_dashboard' %}">Dashboard</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </nav>

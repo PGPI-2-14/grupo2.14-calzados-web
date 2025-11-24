@@ -1,0 +1,185 @@
+{% extends "accounts/admin_base.html" %}
+{% load static %}
+
+{% block title %}Gestionar Clientes{% endblock %}
+
+{% block admin_section %}Clientes{% endblock %}
+
+{% block admin_content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2 class="h3 mb-0">Gestionar Clientes</h2>
+    </div>
+    <div class="col-md-6 text-right">
+        <a href="{% url 'accounts:admin_customer_create' %}" class="btn btn-primary">
+            <span class="icon-person_add mr-2"></span>Nuevo Cliente
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row">
+            <div class="col-md-6 mb-3">
+                <input type="text" name="q" class="form-control" placeholder="Buscar clientes..." 
+                       value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <select name="sort" class="form-control">
+                    <option value="">Ordenar por</option>
+                    <option value="newest" {% if request.GET.sort == 'newest' %}selected{% endif %}>Más recientes</option>
+                    <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Más antiguos</option>
+                    <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Nombre A-Z</option>
+                </select>
+            </div>
+            <div class="col-md-2 mb-3">
+                <button type="submit" class="btn btn-outline-primary btn-block">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Customers Table -->
+<div class="card">
+    <div class="card-body">
+        {% if customers %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Ubicación</th>
+                        <th>Total Pedidos</th>
+                        <th>Miembro desde</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>
+                            <strong>{{ customer.first_name }} {{ customer.last_name }}</strong>
+                            {% if customer.role == 'admin' %}
+                            <span class="badge badge-info ml-1">Admin</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ customer.email }}</td>
+                        <td>
+                            {% if customer.phone %}
+                            {{ customer.phone }}
+                            {% else %}
+                            <span class="text-muted">No proporcionado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if customer.city %}
+                            {{ customer.city }}
+                            {% else %}
+                            <span class="text-muted">No especificada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-primary">
+                                {{ customer.orders.count }}
+                            </span>
+                        </td>
+                        <td>{{ customer.created|date:"d/m/Y" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'accounts:admin_customer_edit' customer.id %}" 
+                                   class="btn btn-outline-warning" title="Editar">
+                                    <span class="icon-edit"></span>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" 
+                                        title="Eliminar"
+                                        onclick="confirmDelete({{ customer.id }}, '{{ customer.first_name }} {{ customer.last_name }}')">
+                                    <span class="icon-delete"></span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if customers.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if customers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ customers.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                </li>
+                {% endif %}
+
+                {% for i in customers.paginator.page_range %}
+                {% if customers.number == i %}
+                <li class="page-item active">
+                    <span class="page-link">{{ i }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ i }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if customers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ customers.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <span class="icon-people display-1 text-muted"></span>
+            <h4 class="text-muted mt-3">No se encontraron clientes</h4>
+            <p class="text-muted">No hay clientes que coincidan con los criterios de búsqueda.</p>
+            <a href="{% url 'accounts:admin_customer_create' %}" class="btn btn-primary">
+                <span class="icon-person_add mr-2"></span>Crear Primer Cliente
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar al cliente <strong id="customerNameToDelete"></strong>?</p>
+                <p class="text-muted small">Esta acción eliminará todos los pedidos asociados a este cliente y no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form method="post" id="deleteCustomerForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(customerId, customerName) {
+    document.getElementById('customerNameToDelete').textContent = customerName;
+    document.getElementById('deleteCustomerForm').action = '/accounts/admin-lite/customers/' + customerId + '/delete/';
+    $('#deleteCustomerModal').modal('show');
+}
+</script>
+{% endblock %}

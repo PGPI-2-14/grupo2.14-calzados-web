@@ -1,30 +1,8 @@
 [
   {
     "id": 1,
-    "customer": 5,
-    "order_number": "MOCK-0001",
-    "status": "pending",
-    "subtotal": "139.99",
-    "taxes": "10.00",
-    "shipping_cost": "0.00",
-    "discount": "0.00",
-    "total": "149.99",
-    "paid": false,
-    "shipping_method": "",
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john.doe@example.com",
-    "address": "123 Main St",
-    "postal_code": "28001",
-    "city": "Madrid",
-    "payment_method": "card",
-    "shipping_address": "123 Main St",
-    "phone": "+34600000001"
-  },
-  {
-    "id": 2,
     "customer": 1,
-    "order_number": "MOCK-0002",
+    "order_number": "MOCK-0001",
     "status": "processing",
     "subtotal": "79.50",
     "taxes": "10.00",
@@ -44,9 +22,9 @@
     "phone": "+34600000002"
   },
   {
-    "id": 3,
+    "id": 2,
     "customer": 1,
-    "order_number": "MOCK-0003",
+    "order_number": "MOCK-0002",
     "status": "shipped",
     "subtotal": "49.99",
     "taxes": "10.00",
@@ -66,9 +44,9 @@
     "phone": "+34600000002"
   },
   {
-    "id": 4,
-    "customer": 1,
-    "order_number": "MOCK-0004",
+    "id": 3,
+    "customer": null,
+    "order_number": "MOCK-0003",
     "status": "delivered",
     "subtotal": "110.00",
     "taxes": "10.00",
@@ -88,9 +66,9 @@
     "phone": "+34600000002"
   },
   {
-    "id": 5,
+    "id": 4,
     "customer": 1,
-    "order_number": "MOCK-0005",
+    "order_number": "MOCK-0004",
     "status": "cancelled",
     "subtotal": "89.30",
     "taxes": "0.00",
@@ -110,9 +88,9 @@
     "phone": "+34600000002"
   },
   {
-    "id": 6,
+    "id": 5,
     "customer": null,
-    "order_number": "MOCK-0006",
+    "order_number": "MOCK-0005",
     "status": "pending",
     "subtotal": "49.99",
     "taxes": "0",
@@ -132,9 +110,9 @@
     "phone": ""
   },
   {
-    "id": 7,
+    "id": 6,
     "customer": null,
-    "order_number": "MOCK-0007",
+    "order_number": "MOCK-0006",
     "status": "pending",
     "subtotal": "49.99",
     "taxes": "0",
@@ -154,9 +132,9 @@
     "phone": ""
   },
   {
-    "id": 8,
+    "id": 7,
     "customer": null,
-    "order_number": "MOCK-0008",
+    "order_number": "MOCK-0007",
     "status": "paid",
     "subtotal": "99.98",
     "taxes": "0",
@@ -176,9 +154,9 @@
     "phone": ""
   },
   {
-    "id": 9,
+    "id": 8,
     "customer": null,
-    "order_number": "MOCK-0009",
+    "order_number": "MOCK-0008",
     "status": "pending",
     "subtotal": "89.9",
     "taxes": "0",
@@ -198,9 +176,9 @@
     "phone": ""
   },
   {
-    "id": 10,
+    "id": 9,
     "customer": null,
-    "order_number": "MOCK-0010",
+    "order_number": "MOCK-0009",
     "status": "paid",
     "subtotal": "49.99",
     "taxes": "0",
@@ -208,7 +186,7 @@
     "discount": "0",
     "total": "54.980000000000004",
     "paid": true,
-    "shipping_method": "home",
+    "shipping_method": "",
     "first_name": "adfas",
     "last_name": "Tienda",
     "email": "test@example.com",
@@ -218,5 +196,27 @@
     "payment_method": "card",
     "shipping_address": "fsdsf",
     "phone": ""
+  },
+  {
+    "id": 10,
+    "customer": 5,
+    "order_number": "MOCK-0010",
+    "status": "paid",
+    "subtotal": "49.99",
+    "taxes": "0",
+    "shipping_cost": "4.99",
+    "discount": "0",
+    "total": "54.98",
+    "paid": true,
+    "shipping_method": "home",
+    "first_name": "Ana",
+    "last_name": "Sanchez",
+    "email": "ana@example.com",
+    "address": "Calle Mayor 1",
+    "postal_code": "28001",
+    "city": "Madrid",
+    "payment_method": "card",
+    "shipping_address": "",
+    "phone": "+34 600 000 001"
   }
 ]

@@ -26,14 +26,6 @@
                 </td>
             </tr>
 
-            <tr data-field="username">
-                <th>Usuario</th>
-                <td class="value">{{ user.username }}</td>
-                <td>
-                    <span class="icon icon-edit edit-btn" style="cursor:pointer;"></span>
-                </td>
-            </tr>
-
             <tr data-field="password">
                 <th>Contraseña</th>
                 <td class="value">{{ user.password }}</td>
@@ -87,16 +79,18 @@
 </div>
 
 <script>
-
-
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".edit-btn").forEach(btn => {
         btn.addEventListener("click", function () {
-
             const row = this.closest("tr");
             const field = row.dataset.field;
             const valueCell = row.querySelector(".value");
             const oldValue = valueCell.textContent.trim();
+
+            // Evitar editar si ya está en modo edición
+            if (valueCell.querySelector(".edit-input")) {
+                return;
+            }
 
             valueCell.innerHTML = `
                 <input type="text" class="form-control edit-input" value="${oldValue}">
@@ -124,6 +118,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         valueCell.innerHTML = newValue;
                     } else {
                         alert("Error al guardar el dato");
+                        valueCell.innerHTML = oldValue;
                     }
                 });
             });

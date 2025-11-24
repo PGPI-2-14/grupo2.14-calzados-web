@@ -1,0 +1,156 @@
+{% extends "shop/base/base.html" %}
+{% load static %}
+
+{% block title %}Gestión de Pedidos - Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <span class="icon-shopping_cart mr-2"></span>
+            Gestión de Pedidos
+        </h2>
+        <div>
+            <a href="{% url 'accounts:admin_sales_dashboard' %}" class="btn btn-outline-primary">
+                <span class="icon-dashboard mr-1"></span>Dashboard
+            </a>
+            <a href="{% url 'accounts:admin_products' %}" class="btn btn-outline-secondary ml-2">
+                <span class="icon-inventory mr-1"></span>Productos
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter by Status -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="mb-3">Filtrar por Estado</h5>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <a href="{% url 'accounts:admin_orders' %}" class="btn btn-outline-primary {% if not selected_status %}active{% endif %}">
+                    Todos
+                </a>
+                {% for status in statuses %}
+                <a href="?status={{ status }}" class="btn btn-outline-primary {% if selected_status == status %}active{% endif %}">
+                    {{ status|title }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if orders %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Número</th>
+                            <th>Cliente</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Pagado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>
+                                <a href="{% url 'accounts:admin_order_detail' order.id %}" class="font-weight-bold">
+                                    {{ order.order_number }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ order.first_name }} {{ order.last_name }}<br>
+                                <small class="text-muted">{{ order.email }}</small>
+                            </td>
+                            <td class="font-weight-bold">{{ order.total }}€</td>
+                            <td>
+                                {% if order.status == 'delivered' %}
+                                <span class="badge badge-success">{{ order.status|title }}</span>
+                                {% elif order.status == 'shipped' %}
+                                <span class="badge badge-info">{{ order.status|title }}</span>
+                                {% elif order.status == 'processing' %}
+                                <span class="badge badge-primary">{{ order.status|title }}</span>
+                                {% elif order.status == 'cancelled' %}
+                                <span class="badge badge-danger">{{ order.status|title }}</span>
+                                {% else %}
+                                <span class="badge badge-warning">{{ order.status|title }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if order.paid %}
+                                <span class="badge badge-success">Sí</span>
+                                {% else %}
+                                <span class="badge badge-warning">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ order.created|date:"d/m/Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'accounts:admin_order_detail' order.id %}" 
+                                   class="btn btn-sm btn-info" 
+                                   title="Ver detalles">
+                                    <span class="icon-visibility"></span>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger ml-1" 
+                                        title="Eliminar"
+                                        onclick="confirmDeleteOrder({{ order.id }}, '{{ order.order_number }}')">
+                                    <span class="icon-delete"></span>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <span class="icon-inbox" style="font-size: 48px; color: #ccc;"></span>
+                <p class="text-muted mt-3">No hay pedidos{% if selected_status %} con estado "{{ selected_status }}"{% endif %}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteOrderModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el pedido <strong id="orderNumberToDelete"></strong>?</p>
+                <p class="text-muted small">Esta acción eliminará el pedido y todos sus items asociados.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form method="post" id="deleteOrderForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDeleteOrder(orderId, orderNumber) {
+    document.getElementById('orderNumberToDelete').textContent = orderNumber;
+    document.getElementById('deleteOrderForm').action = '/accounts/admin-lite/orders/' + orderId + '/delete/';
+    $('#deleteOrderModal').modal('show');
+}
+</script>
+
+{% endblock %}
