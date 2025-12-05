@@ -57,31 +57,91 @@ def update_field(request):
     return JsonResponse({"status": "ok"})
 
 def login_view(request):
-    # Cargar pedidos de usuarios no registrados si se proporciona un número de pedido
+    """Login view that supports both customers and admins"""
+    # Guest order lookup
     guest_orders = []
     search_order_number = None
     
     if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
 
-        data_path = Path(__file__).resolve().parent.parent / 'tests' / 'mockdb' / 'data' / 'customers.json'
+        # Paths to data files
+        base_path = Path(__file__).resolve().parent.parent / 'tests' / 'mockdb' / 'data'
+        data_path_customers = base_path / 'customers.json'
+        data_path_admin = base_path / 'admin.json'
 
+        all_users = []
+        
+        # Load customers
         try:
-            with open(data_path, 'r', encoding='utf-8') as file:
-                users = json.load(file)
+            with open(data_path_customers, 'r', encoding='utf-8') as file:
+                customers = json.load(file)
+                # Ensure customers have role
+                for customer in customers:
+                    if 'role' not in customer:
+                        customer['role'] = 'customer'
+                all_users.extend(customers)
+                print(f"[LOGIN] Loaded {len(customers)} customers")
         except FileNotFoundError:
-            messages.error(request, 'No se encontró el archivo de usuarios de prueba.')
+            print("[LOGIN] customers.json not found")
+            pass
+        except Exception as e:
+            print(f"[LOGIN] Error loading customers: {e}")
+        
+        # Load admins
+        try:
+            with open(data_path_admin, 'r', encoding='utf-8') as file:
+                admins = json.load(file)
+                # Ensure admins have role
+                for admin in admins:
+                    if 'role' not in admin:
+                        admin['role'] = 'admin'
+                all_users.extend(admins)
+                print(f"[LOGIN] Loaded {len(admins)} admins")
+        except FileNotFoundError:
+            print("[LOGIN] admin.json not found")
+            pass
+        except Exception as e:
+            print(f"[LOGIN] Error loading admins: {e}")
+
+        if not all_users:
+            messages.error(request, 'No se encontró el archivo de usuarios.')
             return render(request, 'accounts/login.html')
-
-        for user in users:
-            if user.get('email') == email and user.get('password') == password:
-                request.session['mock_user'] = user
+        
+        # Check credentials
+        user_found = None
+        for user in all_users:
+            user_email = user.get('email', '').strip()
+            user_password = str(user.get('password', '')).strip()
+            
+            print(f"[LOGIN] Checking user: {user_email} (role: {user.get('role')})")
+            
+            if user_email == email and user_password == password:
+                user_found = user
+                print(f"[LOGIN] Match found! User: {user_email}, Role: {user.get('role')}")
+                break
+        
+        if user_found:
+            # Set session data
+            request.session['mock_user'] = user_found
+            request.session['mock_user_role'] = user_found.get('role', 'customer')
+            request.session['mock_user_id'] = user_found.get('id')
+            
+            # Redirect based on role
+            if user_found.get('role') == 'admin':
+                messages.success(request, f'Bienvenido Admin: {user_found.get("first_name", "")} {user_found.get("last_name", "")}')
+                print(f"[LOGIN] Admin login successful, redirecting to dashboard")
+                return redirect('accounts:admin_dashboard')
+            else:
+                messages.success(request, f'Bienvenido: {user_found.get("first_name", "")} {user_found.get("last_name", "")}')
+                print(f"[LOGIN] Customer login successful")
                 return redirect('shop:product_list')
-
-        messages.error(request, 'Correo electrónico o contraseña incorrectos.')
+        else:
+            print(f"[LOGIN] No match found for email: {email}")
+            messages.error(request, 'Correo electrónico o contraseña incorrectos.')
     
-    # Si se proporciona un número de pedido por GET (para buscar pedidos de invitados)
+    # Handle guest order lookup (GET request)
     elif request.method == 'GET' and request.GET.get('order_number'):
         search_order_number = request.GET.get('order_number').strip()
         
@@ -102,17 +162,13 @@ def login_view(request):
                 with open(products_path, 'r', encoding='utf-8') as f:
                     products_data = json.load(f)
                 
-                # Buscar pedido por número (sin importar si es de invitado o registrado)
                 found_order = next(
                     (o for o in orders_data if o.get('order_number', '').upper() == search_order_number.upper()),
                     None
                 )
                 
                 if found_order:
-                    # Mapear productos por ID
                     products_map = {p.get('id'): p for p in products_data}
-                    
-                    # Enriquecer el pedido con sus items
                     order_id = found_order.get('id')
                     items = [
                         {
@@ -145,7 +201,16 @@ def profile_view(request):
 def logout_view(request):
     if 'mock_user' in request.session:
         del request.session['mock_user']
-
+    
+    if 'mock_user_role' in request.session:
+        del request.session['mock_user_role']
+    
+    if 'mock_user_id' in request.session:
+        del request.session['mock_user_id']
+    
+    request.session.flush()
+    
+    messages.success(request, 'Has cerrado sesión correctamente.')
     return redirect('accounts:login')
 
 
