@@ -29,3 +29,7 @@ JCB: 3530111333300000
 
 ## Web desplegada
 https://isasancas.pythonanywhere.com/
+
+## Contraseña de Admin
+usuario: admin@tienda.local
+contraseña: admin123
