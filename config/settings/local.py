@@ -1,6 +1,18 @@
 """Django settings for config project."""
 
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables desde ambos lugares para compatibilidad:
+# 1) Raíz del repo (padre de 'config')
+# 2) Carpeta 'config' (por compatibilidad con equipos que ya lo usaban)
+_ROOT_DIR = Path(__file__).resolve().parents[2]
+_CONFIG_DIR = Path(__file__).resolve().parent
+
+# Cargar primero raíz y luego config con override=False (no pisa valores ya cargados)
+load_dotenv(_ROOT_DIR / ".env", override=False)
+load_dotenv(_CONFIG_DIR / ".env", override=False)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # PROJECT_DIR es la carpeta raíz del repo (padre de 'config')
@@ -128,3 +140,26 @@ CART_SESSION_ID = 'cart'
 if USE_MOCKDB:
     SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
     print("Sesiones almacenadas en cookies (sin usar tablas SQL).")
+
+# Email configuration - Gmail
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'no-reply@nexoshoes.com')
+
+# Fix para Python 3.12+ con Django email
+import sys
+if sys.version_info >= (3, 12):
+    import ssl
+    EMAIL_USE_SSL = False
+    EMAIL_SSL_KEYFILE = None
+    EMAIL_SSL_CERTFILE = None
+
+# Si no hay credenciales, usar consola
+if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    print("EMAIL: Configuración de Gmail no encontrada. Usando consola.")
+    print("Crea un archivo .env con tus credenciales de Gmail")

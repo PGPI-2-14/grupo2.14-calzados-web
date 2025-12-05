@@ -1,0 +1,122 @@
+{% extends "shop/base/base.html" %}
+{% block title %}Contacto{% endblock %}
+{% block content %}
+<div class="bg-light py-3">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 mb-0">
+        <a href="{% url 'shop:product_list' %}">Menú Principal</a>
+        <span class="mx-2 mb-0">/</span>
+        <strong class="text-black">Contacto</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="site-section">
+  <div class="container">
+    <div class="row mb-5">
+      <div class="col-md-6">
+        <h2 class="mb-4">Información de Contacto</h2>
+        <ul class="list-unstyled mb-5">
+          <li class="mb-3">
+            <span class="icon-map_marker text-primary mr-2"></span>
+            <strong>Dirección:</strong><br>
+            Av. de la Reina Mercedes, s/n, 41012 Sevilla, España
+          </li>
+          <li class="mb-3">
+            <span class="icon-phone text-primary mr-2"></span>
+            <strong>Teléfono:</strong><br>
+            +34 954 55 28 28
+          </li>
+          <li class="mb-3">
+            <span class="icon-mail_outline text-primary mr-2"></span>
+            <strong>Email:</strong><br>
+            <a href="mailto:info@nexoshoes.com">info@nexoshoes.com</a>
+          </li>
+          <li class="mb-3">
+            <span class="icon-schedule text-primary mr-2"></span>
+            <strong>Horario:</strong><br>
+            Lunes - Viernes: 9:00 AM - 8:00 PM<br>
+            Sábado: 10:00 AM - 6:00 PM<br>
+            Domingo: 11:00 AM - 3:00 PM
+          </li>
+        </ul>
+        
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title mb-3">
+              <span class="icon-directions mr-2"></span>Cómo llegar
+            </h5>
+            <p class="mb-2"><strong>En transporte público:</strong></p>
+            <ul class="small mb-3">
+              <li>Metro: Línea 1 - Estación "Prado de San Sebastián"</li>
+              <li>Autobús: Líneas C1, C2, 27, 32</li>
+            </ul>
+            <p class="mb-2"><strong>En coche:</strong></p>
+            <p class="small mb-0">
+              Parking disponible en las inmediaciones.<br>
+              Zona regulada de estacionamiento (ORA).
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <h2 class="mb-4">Encuéntranos</h2>
+        
+        <!-- Google Maps Embed -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body p-0">
+            <div style="position: relative; padding-bottom: 75%; height: 0; overflow: hidden;">
+              <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3170.5425982825446!2d-5.9900848!3d37.3633539!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd126dd4db75889b%3A0x7b5b6e9e2a5f9d1a!2sAv.%20de%20la%20Reina%20Mercedes%2C%2041012%20Sevilla!5e0!3m2!1ses!2ses!4v1234567890123!5m2!1ses!2ses"
+                width="100%" 
+                height="100%" 
+                style="border:0; position: absolute; top: 0; left: 0;"
+                allowfullscreen="" 
+                loading="lazy" 
+                referrerpolicy="no-referrer-when-downgrade">
+              </iframe>
+            </div>
+          </div>
+          <div class="card-footer bg-light text-center">
+            <a href="https://www.google.com/maps/dir//Av.+de+la+Reina+Mercedes,+41012+Sevilla" 
+               target="_blank" 
+               class="btn btn-sm btn-primary">
+              <span class="icon-directions mr-1"></span>
+              Obtener direcciones
+            </a>
+          </div>
+        </div>
+        
+        <div class="alert alert-info">
+          <span class="icon-info_outline mr-2"></span>
+          <strong>¿Necesitas ayuda?</strong><br>
+          Nuestro equipo está disponible para atenderte durante nuestro horario comercial. 
+          También puedes contactarnos por teléfono o email en cualquier momento.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Responsive map container */
+@media (max-width: 768px) {
+  .card-body .position-relative {
+    padding-bottom: 100% !important;
+  }
+}
+
+/* Improve card hover effects */
+.card {
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+</style>
+
+{% endblock %}

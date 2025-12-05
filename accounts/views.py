@@ -3,22 +3,285 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.conf import settings
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+
 import os
 import json
+from pathlib import Path
 
 from .utils import require_admin, require_customer, SESSION_USER_ROLE, SESSION_USER_ID
 from .models import UserAccount
 from order.models import Order, OrderItem
 
+@csrf_exempt
+def update_field(request):
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Método no permitido"}, status=400)
 
-def login_view(request: HttpRequest) -> HttpResponse:
-    # Placeholder: vista de login no implementada aún
-    return render(request, 'accounts/login.html')
+    try:
+        data = json.loads(request.body)
+        field = data["field"]
+        value = data["value"]
+    except Exception:
+        return JsonResponse({"status": "error", "message": "JSON inválido"}, status=400)
+
+    user = request.session.get("mock_user")
+    if not user:
+        return JsonResponse({"status": "error", "message": "No autenticado"}, status=403)
+
+    json_path = (
+        Path(__file__).resolve().parent.parent
+        / "tests" / "mockdb" / "data" / "customers.json"
+    )
+
+    with open(json_path, "r", encoding="utf-8") as file:
+        users = json.load(file)
+
+    for u in users:
+        if u.get("email") == user.get("email"):
+            u[field] = value
+            break
+    else:
+        return JsonResponse({"status": "error", "message": "Usuario no encontrado"}, status=404)
+
+
+    with open(json_path, "w", encoding="utf-8") as file:
+        json.dump(users, file, indent=4, ensure_ascii=False)
+
+    user[field] = value
+    request.session["mock_user"] = user
+
+    return JsonResponse({"status": "ok"})
+
+def login_view(request):
+    # Cargar pedidos de usuarios no registrados si se proporciona un número de pedido
+    guest_orders = []
+    search_order_number = None
+    
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        data_path = Path(__file__).resolve().parent.parent / 'tests' / 'mockdb' / 'data' / 'customers.json'
+
+        try:
+            with open(data_path, 'r', encoding='utf-8') as file:
+                users = json.load(file)
+        except FileNotFoundError:
+            messages.error(request, 'No se encontró el archivo de usuarios de prueba.')
+            return render(request, 'accounts/login.html')
+
+        for user in users:
+            if user.get('email') == email and user.get('password') == password:
+                request.session['mock_user'] = user
+                return redirect('shop:product_list')
+
+        messages.error(request, 'Correo electrónico o contraseña incorrectos.')
+    
+    # Si se proporciona un número de pedido por GET (para buscar pedidos de invitados)
+    elif request.method == 'GET' and request.GET.get('order_number'):
+        search_order_number = request.GET.get('order_number').strip()
+        
+        if getattr(settings, 'USE_MOCKDB', False):
+            repo_root = os.path.dirname(os.path.dirname(__file__))
+            data_dir = os.path.join(repo_root, 'tests', 'mockdb', 'data')
+            orders_path = os.path.join(data_dir, 'orders.json')
+            order_items_path = os.path.join(data_dir, 'order_items.json')
+            products_path = os.path.join(data_dir, 'products.json')
+
+            try:
+                with open(orders_path, 'r', encoding='utf-8') as f:
+                    orders_data = json.load(f)
+                
+                with open(order_items_path, 'r', encoding='utf-8') as f:
+                    order_items_data = json.load(f)
+                
+                with open(products_path, 'r', encoding='utf-8') as f:
+                    products_data = json.load(f)
+                
+                # Buscar pedido por número (sin importar si es de invitado o registrado)
+                found_order = next(
+                    (o for o in orders_data if o.get('order_number', '').upper() == search_order_number.upper()),
+                    None
+                )
+                
+                if found_order:
+                    # Mapear productos por ID
+                    products_map = {p.get('id'): p for p in products_data}
+                    
+                    # Enriquecer el pedido con sus items
+                    order_id = found_order.get('id')
+                    items = [
+                        {
+                            'product_name': products_map.get(item.get('product'), {}).get('name', 'Producto'),
+                            'quantity': item.get('quantity', 1),
+                            'price': item.get('price', 0),
+                            'size': item.get('size', ''),
+                        }
+                        for item in order_items_data
+                        if item.get('order') == order_id
+                    ]
+                    found_order['items'] = items
+                    guest_orders.append(found_order)
+                
+            except Exception as e:
+                print(f"Error al cargar pedido: {e}")
+
+    return render(request, 'accounts/login.html', {
+        'guest_orders': guest_orders,
+        'search_order_number': search_order_number
+    })
+
+def profile_view(request):
+    if 'mock_user' in request.session:
+        return render(request, 'accounts/profile.html', {'user': request.session['mock_user']})
+
+    else:
+        return redirect('accounts:login')
+
+def logout_view(request):
+    if 'mock_user' in request.session:
+        del request.session['mock_user']
+
+    return redirect('accounts:login')
 
 
 def register_view(request: HttpRequest) -> HttpResponse:
-    # Placeholder: vista de registro no implementada aún
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        address = request.POST.get('address', '').strip()
+        postal_code = request.POST.get('postal_code', '').strip()
+        city = request.POST.get('city', '').strip()
+        phone_number = request.POST.get('phone_number', '').strip()
+        password1 = request.POST.get('password1', '')
+        password2 = request.POST.get('password2', '')
+
+        # Validaciones básicas
+        if not all([first_name, last_name, email, address, postal_code, city, phone_number, password1, password2]):
+            messages.error(request, 'Todos los campos son obligatorios.')
+            return render(request, 'accounts/register.html')
+
+        if password1 != password2:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return render(request, 'accounts/register.html')
+
+        # Cargar usuarios existentes
+        data_path = Path(__file__).resolve().parent.parent / 'tests' / 'mockdb' / 'data' / 'customers.json'
+
+        try:
+            with open(data_path, 'r', encoding='utf-8') as file:
+                users = json.load(file)
+        except FileNotFoundError:
+            users = []
+
+        # Verificar si el email ya existe
+        for user in users:
+            if user.get('email') == email:
+                messages.error(request, 'El email ya está registrado.')
+                return render(request, 'accounts/register.html')
+
+        # Generar nuevo ID (máximo ID + 1)
+        new_id = max([user.get('id', 0) for user in users], default=0) + 1
+
+        # Crear nuevo usuario
+        new_user = {
+            'id': new_id,
+            'first_name': first_name,
+            'last_name': last_name,
+            'email': email,
+            'phone': phone_number,
+            'address': address,
+            'city': city,
+            'postal_code': postal_code,
+            'password': password1
+        }
+
+        users.append(new_user)
+
+        # Guardar en el JSON
+        try:
+            with open(data_path, 'w', encoding='utf-8') as file:
+                json.dump(users, file, indent=4, ensure_ascii=False)
+            
+            # Iniciar sesión automáticamente
+            request.session['mock_user'] = new_user
+            return redirect('shop:product_list')
+        except Exception as e:
+            messages.error(request, f'Error al guardar el usuario: {str(e)}')
+            return render(request, 'accounts/register.html')
+
     return render(request, 'accounts/register.html')
+
+def my_data_view(request):
+    if 'mock_user' not in request.session:
+        return redirect('accounts:login')
+
+    user = request.session['mock_user']
+
+    return render(request, 'accounts/my_data.html', {'user': user})
+
+
+def my_orders_view(request):
+    """Vista para mostrar los pedidos del usuario logueado."""
+    if 'mock_user' not in request.session:
+        return redirect('accounts:login')
+
+    user = request.session['mock_user']
+    user_id = user.get('id')
+    
+    # Cargar pedidos del usuario desde el JSON
+    orders_list = []
+    if getattr(settings, 'USE_MOCKDB', False):
+        repo_root = os.path.dirname(os.path.dirname(__file__))
+        data_dir = os.path.join(repo_root, 'tests', 'mockdb', 'data')
+        orders_path = os.path.join(data_dir, 'orders.json')
+        order_items_path = os.path.join(data_dir, 'order_items.json')
+        products_path = os.path.join(data_dir, 'products.json')
+
+        try:
+            with open(orders_path, 'r', encoding='utf-8') as f:
+                orders_data = json.load(f)
+            
+            with open(order_items_path, 'r', encoding='utf-8') as f:
+                order_items_data = json.load(f)
+            
+            with open(products_path, 'r', encoding='utf-8') as f:
+                products_data = json.load(f)
+            
+            # Filtrar pedidos del usuario
+            user_orders = [o for o in orders_data if o.get('customer') == user_id]
+            
+            # Mapear productos por ID
+            products_map = {p.get('id'): p for p in products_data}
+            
+            # Enriquecer cada pedido con sus items
+            for order in user_orders:
+                order_id = order.get('id')
+                items = [
+                    {
+                        'product_name': products_map.get(item.get('product'), {}).get('name', 'Producto'),
+                        'quantity': item.get('quantity', 1),
+                        'price': item.get('price', 0),
+                        'size': item.get('size', ''),
+                    }
+                    for item in order_items_data
+                    if item.get('order') == order_id
+                ]
+                order['items'] = items
+                orders_list.append(order)
+            
+            # Ordenar por ID descendente (más recientes primero)
+            orders_list.sort(key=lambda x: x.get('id', 0), reverse=True)
+            
+        except Exception as e:
+            print(f"Error al cargar pedidos: {e}")
+    
+    return render(request, 'accounts/my_orders.html', {'orders': orders_list})
 
 
 @require_admin

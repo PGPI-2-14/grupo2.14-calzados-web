@@ -4,11 +4,49 @@
 {% if category %}{{ category.name }}{% else %}Products{% endif %}
 {% endblock %}
 {% block content %}
+
+<!-- Admin Controls -->
+{% if request.session.mock_user_role == 'admin' %}
+<div class="container mt-3">
+    <div class="alert alert-success d-flex justify-content-between align-items-center">
+        <span><strong>Modo Admin:</strong> Gestión de productos</span>
+        <div>
+            <a href="{% url 'accounts:admin_product_create' %}" class="btn btn-sm btn-success">
+                <span class="icon-add mr-1"></span>Añadir Producto
+            </a>
+            <a href="{% url 'accounts:admin_orders' %}" class="btn btn-sm btn-info ml-2">
+                <span class="icon-list mr-1"></span>Ver Pedidos
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if search_query %}
 <div class="bg-light py-3">
     <div class="container">
         <div class="row">
-            <div class="col-md-12 mb-0"><a href="index.html">Menú Principal</a> <span class="mx-2 mb-0">/</span> <strong
-                    class="text-black">Tienda</strong></div>
+            <div class="col-md-12">
+                <h3>Resultados de búsqueda para: <strong>"{{ search_query }}"</strong></h3>
+                {% if products %}
+                    <p class="text-muted">Se encontraron {{ products|length }} producto(s)</p>
+                {% else %}
+                    <p class="text-muted">No se encontraron productos que coincidan con tu búsqueda.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="bg-light py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 mb-0">
+                <a href="{% url 'shop:product_list' %}">Menú Principal</a> 
+                <span class="mx-2 mb-0">/</span> 
+                <strong class="text-black">Tienda</strong>
+            </div>
         </div>
     </div>
 </div>
@@ -20,53 +58,239 @@
                 <div class="row mb-5">
                     {% for product in products %}
                     <div class="col-sm-6 col-lg-4 mb-4" data-aos="fade-up">
-                        <div class="block-4 text-center border">
-                            <figure class="block-4-image">
-                                <a href="{{ product.get_absolute_url }}"><img src="{{ product.image.url }}" 
-                                        alt="Image placeholder" class="img-fluid" style="height: 10vw;"></a>
-                            </figure>
-                            <div class="block-4-text p-4">
-                                <h3><a href="{{ product.get_absolute_url }}">{{ product.name }}</a></h3>
-                                <p class="mb-0">{{ product.description }}</p>
-                                <p class="text-primary font-weight-bold">${{ product.price }}</p>
+                        <div class="card border-0 shadow-sm h-100 product-card position-relative">
+                            <!-- Admin Quick Actions -->
+                            {% if request.session.mock_user_role == 'admin' %}
+                            <div class="position-absolute" style="top: 10px; right: 10px; z-index: 10;">
+                                <a href="{% url 'accounts:admin_product_edit' product.id %}" 
+                                   class="btn btn-sm btn-warning mr-1" 
+                                   title="Editar"
+                                   style="opacity: 0.9;">
+                                    <span class="icon-edit"></span>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger" 
+                                        title="Eliminar"
+                                        style="opacity: 0.9;"
+                                        onclick="confirmDelete({{ product.id }}, '{{ product.name }}')">
+                                    <span class="icon-delete"></span>
+                                </button>
+                            </div>
+                            {% endif %}
+                            
+                            <a href="{{ product.get_absolute_url }}" class="position-relative overflow-hidden">
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top" style="height: 250px; object-fit: cover; transition: transform 0.3s;">
+                            </a>
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">
+                                    <a href="{{ product.get_absolute_url }}" class="text-dark text-decoration-none">{{ product.name }}</a>
+                                </h5>
+                                <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:15 }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-auto">
+                                    {% if product.offer_price and product.offer_price < product.price %}
+                                        <div>
+                                            <h5 class="text-primary mb-0">{{ product.offer_price }}€</h5>
+                                            <small class="text-muted"><del>{{ product.price }}€</del></small>
+                                        </div>
+                                        <span class="badge badge-warning">Oferta</span>
+                                    {% elif product.stock <= 0 %}
+                                        <h5 class="text-primary">{{ product.price }}€</h5>
+                                        <span class="badge badge-danger">Agotado</span>
+                                    {% else %}
+                                        <strong class="text-primary">{{ product.price }}€</strong>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
-                
-                <div class="row" data-aos="fade-up">
-                    <div class="col-md-12 text-center">
-                        <div class="site-block-27">
-                            <ul>
-                                <li><a href="#">&lt;</a></li>
-                                <li class="active"><span>1</span></li>
-                                <li><a href="#">2</a></li>
-                                <li><a href="#">3</a></li>
-                                <li><a href="#">4</a></li>
-                                <li><a href="#">5</a></li>
-                                <li><a href="#">&gt;</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
             </div>
+
             <div class="col-md-3 order-1 mb-5 mb-md-0">
-                <div class="border p-4 rounded mb-4">
-                    <h3 class="mb-3 h6 text-uppercase text-black d-block">Categorías</h3>
-                    <ul class="list-unstyled mb-0">
-                        <li {% if not category %} class="mb-1" {% endif %}>
-                            <a href="{% url "shop:product_list" %}" class="d-flex"><span>Todo</a>
-                        </li>
-                        {% for c in categories %}
-                        <li {% if category.slug == c.slug %} class="mb-1" {% endif %}>
-                            <a href="{{ c.get_absolute_url }}" class="d-flex">{{ c.name }}</a>
-                        </li>
-                        {% endfor %}
-                    </ul>
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h3 class="h6 text-uppercase font-weight-bold mb-3">
+                            <span class="icon-filter_list mr-2"></span>Filtrar por
+                        </h3>
+                        
+                        <!-- Active Filters Display -->
+                        {% if selected_brands or selected_colors or selected_materials %}
+                        <div class="mb-3 pb-3 border-bottom">
+                            <h6 class="font-weight-bold mb-2">Filtros activos:</h6>
+                            {% for brand in selected_brands %}
+                            <span class="badge badge-primary mr-1 mb-1">{{ brand }}</span>
+                            {% endfor %}
+                            {% for color in selected_colors %}
+                            <span class="badge badge-info mr-1 mb-1">{{ color }}</span>
+                            {% endfor %}
+                            {% for material in selected_materials %}
+                            <span class="badge badge-success mr-1 mb-1">{{ material }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="filter-section mb-3">
+                            <button class="btn btn-link text-dark font-weight-bold w-100 text-left p-0 mb-2" type="button" data-toggle="collapse" data-target="#categoryFilter">
+                                Categorías <span class="float-right icon-keyboard_arrow_down"></span>
+                            </button>
+                            <div class="collapse show" id="categoryFilter">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="{% url 'shop:product_list' %}" class="text-decoration-none">
+                                            <span>Todo {% if not category %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% for c in categories %}
+                                    <li class="list-group-item px-0 py-1">
+                                        <a href="?category={{ c.slug }}{% for b in selected_brands %}&brand={{ b }}{% endfor %}{% for col in selected_colors %}&color={{ col }}{% endfor %}{% for mat in selected_materials %}&material={{ mat }}{% endfor %}" class="text-decoration-none">
+                                            <span>{{ c.name }} {% if category and category.slug == c.slug %}<span class="icon-check text-primary"></span>{% endif %}</span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="filter-section mb-3">
+                            <button class="btn btn-link text-dark font-weight-bold w-100 text-left p-0 mb-2" type="button" data-toggle="collapse" data-target="#brandFilter">
+                                Marcas <span class="float-right icon-keyboard_arrow_down"></span>
+                            </button>
+                            <div class="collapse" id="brandFilter">
+                                <ul class="list-group list-group-flush">
+                                    {% for brand in brands %}
+                                    <li class="list-group-item px-0 py-1">
+                                        <label class="mb-0 d-flex align-items-center cursor-pointer" style="cursor: pointer;">
+                                            <input type="checkbox" class="mr-2" data-filter-type="brand" data-filter-value="{{ brand }}" {% if brand in selected_brands %}checked{% endif %}>
+                                            <span>{{ brand|title }}</span>
+                                        </label>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="filter-section mb-3">
+                            <button class="btn btn-link text-dark font-weight-bold w-100 text-left p-0 mb-2" type="button" data-toggle="collapse" data-target="#colorFilter">
+                                Colores <span class="float-right icon-keyboard_arrow_down"></span>
+                            </button>
+                            <div class="collapse" id="colorFilter">
+                                <ul class="list-group list-group-flush">
+                                    {% for color in colors %}
+                                    <li class="list-group-item px-0 py-1">
+                                        <label class="mb-0 d-flex align-items-center cursor-pointer" style="cursor: pointer;">
+                                            <input type="checkbox" class="mr-2" data-filter-type="color" data-filter-value="{{ color }}" {% if color in selected_colors %}checked{% endif %}>
+                                            <span>{{ color|title }}</span>
+                                        </label>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="filter-section mb-3">
+                            <button class="btn btn-link text-dark font-weight-bold w-100 text-left p-0 mb-2" type="button" data-toggle="collapse" data-target="#materialFilter">
+                                Materiales <span class="float-right icon-keyboard_arrow_down"></span>
+                            </button>
+                            <div class="collapse" id="materialFilter">
+                                <ul class="list-group list-group-flush">
+                                    {% for material in materials %}
+                                    <li class="list-group-item px-0 py-1">
+                                        <label class="mb-0 d-flex align-items-center cursor-pointer" style="cursor: pointer;">
+                                            <input type="checkbox" class="mr-2" data-filter-type="material" data-filter-value="{{ material }}" {% if material in selected_materials %}checked{% endif %}>
+                                            <span>{{ material|title }}</span>
+                                        </label>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'shop:product_list' %}{% if category %}{{ category.slug }}/{% endif %}" class="btn btn-outline-danger btn-sm btn-block">
+                            <span class="icon-clear mr-1"></span>Limpiar filtros
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1" role="dialog" aria-labelledby="deleteProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteProductModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el producto <strong id="productNameToDelete"></strong>?</p>
+                <p class="text-muted small">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form method="post" id="deleteProductForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Multi-select filter handler
+document.querySelectorAll('input[type="checkbox"][data-filter-type]').forEach(function(checkbox) {
+    checkbox.addEventListener('change', function() {
+        var url = new URL(window.location.href);
+        var params = new URLSearchParams(url.search);
+        
+        // Get all checked values for each filter type
+        var filtersByType = {};
+        document.querySelectorAll('input[type="checkbox"][data-filter-type]:checked').forEach(function(cb) {
+            var type = cb.getAttribute('data-filter-type');
+            var value = cb.getAttribute('data-filter-value');
+            if (!filtersByType[type]) {
+                filtersByType[type] = [];
+            }
+            filtersByType[type].push(value);
+        });
+        
+        // Clear all filter parameters
+        params.delete('brand');
+        params.delete('color');
+        params.delete('material');
+        
+        // Add selected filters back
+        for (var type in filtersByType) {
+            filtersByType[type].forEach(function(value) {
+                params.append(type, value);
+            });
+        }
+        
+        // Preserve category if exists
+        var pathParts = window.location.pathname.split('/');
+        var newUrl = url.origin + url.pathname + '?' + params.toString();
+        
+        window.location.href = newUrl;
+    });
+});
+
+// Delete confirmation function
+function confirmDelete(productId, productName) {
+    document.getElementById('productNameToDelete').textContent = productName;
+    document.getElementById('deleteProductForm').action = '/accounts/admin-lite/products/' + productId + '/delete/';
+    $('#deleteProductModal').modal('show');
+}
+</script>
+
 {% endblock %}

@@ -1,0 +1,135 @@
+{% extends "shop/base/base.html" %}
+{% load static %}
+
+{% block title %}Mis datos{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4">Mis datos</h2>
+
+    <table class="table table-bordered">
+        <tbody>
+            
+            <tr data-field="first_name">
+                <th>Nombre</th>
+                <td class="value">{{ user.first_name }}</td>
+                <td>
+                    <span class="icon icon-edit edit-btn" style="cursor:pointer;"></span>
+                </td>
+            </tr>
+
+            <tr data-field="last_name">
+                <th>Apellidos</th>
+                <td class="value">{{ user.last_name }}</td>
+                <td>
+                    <span class="icon icon-edit edit-btn" style="cursor:pointer;"></span>
+                </td>
+            </tr>
+
+            <tr data-field="password">
+                <th>Contraseña</th>
+                <td class="value">{{ user.password }}</td>
+                <td>
+                    <span class="icon icon-edit edit-btn" style="cursor:pointer;"></span>
+                </td>
+            </tr>
+
+            <tr data-field="email">
+                <th>Email</th>
+                <td class="value">{{ user.email }}</td>
+                <td>
+                    <span class="icon icon-edit edit-btn" style="cursor:pointer;"></span>
+                </td>
+            </tr>
+
+            <tr data-field="phone">
+                <th>Teléfono</th>
+                <td class="value">{{ user.phone }}</td>
+                <td>
+                    <span class="icon icon-edit edit-btn" style="cursor:pointer;"></span>
+                </td>
+            </tr>
+
+            <tr data-field="address">
+                <th>Dirección</th>
+                <td class="value">{{ user.address }}</td>
+                <td>
+                    <span class="icon icon-edit edit-btn" style="cursor:pointer;"></span>
+                </td>
+            </tr>
+
+            <tr data-field="postal_code">
+                <th>Código postal</th>
+                <td class="value">{{ user.postal_code }}</td>
+                <td>
+                    <span class="icon icon-edit edit-btn" style="cursor:pointer;"></span>
+                </td>
+            </tr>
+
+            <tr data-field="city">
+                <th>Ciudad</th>
+                <td class="value">{{ user.city }}</td>
+                <td>
+                    <span class="icon icon-edit edit-btn" style="cursor:pointer;"></span>
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", function () {
+            const row = this.closest("tr");
+            const field = row.dataset.field;
+            const valueCell = row.querySelector(".value");
+            const oldValue = valueCell.textContent.trim();
+
+            // Evitar editar si ya está en modo edición
+            if (valueCell.querySelector(".edit-input")) {
+                return;
+            }
+
+            valueCell.innerHTML = `
+                <input type="text" class="form-control edit-input" value="${oldValue}">
+                <button class="btn btn-sm btn-success save-btn mt-2">Guardar</button>
+                <button class="btn btn-sm btn-secondary cancel-btn mt-2">Cancelar</button>
+            `;
+
+            valueCell.querySelector(".save-btn").addEventListener("click", function () {
+                const newValue = valueCell.querySelector(".edit-input").value;
+
+                fetch("{% url 'accounts:update_field' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({
+                        field: field,
+                        value: newValue
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === "ok") {
+                        valueCell.innerHTML = newValue;
+                    } else {
+                        alert("Error al guardar el dato");
+                        valueCell.innerHTML = oldValue;
+                    }
+                });
+            });
+
+            // Botón cancelar
+            valueCell.querySelector(".cancel-btn").addEventListener("click", function () {
+                valueCell.innerHTML = oldValue;
+            });
+        });
+    });
+});
+</script>
+
+{% endblock %}

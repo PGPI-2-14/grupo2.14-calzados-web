@@ -14,3 +14,18 @@ venv\Scripts\activate
 ```sh
 ./run_mockdb.ps1
 ```
+
+
+## Tarjetas para la prueba de la pasarela
+Visa: 4111111111111111
+
+Mastercard: 5555555555554444
+
+American Express: 378282246310005
+
+Descúbrelo: 6011111111111117
+
+JCB: 3530111333300000
+
+## Web desplegada
+https://isasancas.pythonanywhere.com/

@@ -1,46 +1,309 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from cart.cart import Cart
 from .models import Order, OrderItem
 from .forms import OrderCreateForm
+from .shipping import compute_shipping, method_name
+from decimal import Decimal
+import uuid
 from .shipping import compute_shipping
+import braintree
+from config.braintreeSettings import BRAINTREE_CONF
+import os
+from django.core.exceptions import ImproperlyConfigured
+
+# Importar funciones de persistencia para MockDB
+try:
+    from tests.mockdb.patcher import save_orders_to_fixture, save_order_items_to_fixture
+except Exception:
+    def save_orders_to_fixture():
+        pass
+    def save_order_items_to_fixture():
+        pass
+
+def _mockdb_active():
+    return os.environ.get('USE_MOCKDB') == '1' or getattr(settings, 'USE_MOCKDB', False)
 
 def _generate_order_number(next_id: int) -> str:
     return f"MOCK-{next_id:04d}"
 
 def order_create(request):
     cart = Cart(request)
+    
+    # Obtener datos del usuario logueado si existe
+    initial_data = {}
+    if 'mock_user' in request.session:
+        user = request.session['mock_user']
+        initial_data = {
+            'first_name': user.get('first_name', ''),
+            'last_name': user.get('last_name', ''),
+            'email': user.get('email', ''),
+            'phone': user.get('phone', ''),
+            'address': user.get('address', ''),
+            'city': user.get('city', ''),
+            'postal_code': user.get('postal_code', ''),
+        }
+    
     if request.method == 'POST':
         form = OrderCreateForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            # Subtotal del carrito y envío por defecto (domicilio)
-            subtotal = float(cart.get_total_price())
-            shipping_cost = compute_shipping(subtotal, 'home')
-            total = subtotal + shipping_cost
-            # Crear pedido vía MockDB
-            next_id = getattr(Order.objects, '_next_id', 1)
+            
+            # Obtener customer_id y objeto Customer si el usuario está logueado
+            customer_id = None
+            customer_obj = None
+            customer_email = cd['email']
+            if 'mock_user' in request.session:
+                customer_id = request.session['mock_user'].get('id')
+                customer_email = request.session['mock_user'].get('email')
+                # Obtener el objeto Customer real para MockDB
+                try:
+                    from order.models import Customer
+                    customer_obj = Customer.objects.get(id=customer_id)
+                except Exception as e:
+                    print(f"⚠️ No se pudo obtener Customer con id {customer_id}: {e}")
+            
+            # No forzar id: el FakeManager asigna un id único evitando duplicados
+            next_generated_id = getattr(Order.objects, '_next_id', 1)
+            
+            # Crear el pedido en memoria
             order = Order.objects.create(
-                id=next_id,
                 first_name=cd['first_name'],
                 last_name=cd['last_name'],
                 email=cd['email'],
                 address=cd['address'],
                 postal_code=cd['postal_code'],
                 city=cd['city'],
-                order_number=_generate_order_number(next_id),
+                order_number=_generate_order_number(next_generated_id),
                 status='pending',
-                subtotal=str(subtotal),
-                shipping_cost=str(shipping_cost),
-                shipping_method='home',
+                subtotal=str('0'),
+                shipping_cost=str('0'),
+                shipping_method=cd.get('shipping_method') or 'home',
                 taxes='0',
                 discount='0',
-                total=str(total),
+                total=str('0'),
                 paid=False,
+                payment_method=cd.get('payment_method') or '',
+                phone=cd.get('phone') or '',
+                customer=customer_obj,  # Asignar el objeto Customer directamente
             )
+            
+            # Calculate totals
+            subtotal = Decimal('0.00')
             for item in cart:
-                OrderItem.objects.create(order=order, product=item['product'], price=item['price'], quantity=item['quantity'])
+                subtotal += Decimal(str(item['price'])) * item['quantity']
+            
+            shipping_cost = Decimal(str(compute_shipping(float(subtotal), order.shipping_method)))
+            
+            order.subtotal = subtotal
+            order.shipping_cost = shipping_cost
+            order.total = subtotal + shipping_cost
+            order.save()
+            
+            # Create order items
+            for item in cart:
+                product = item['product']
+                if product:
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        price=item['price'],
+                        quantity=item['quantity'],
+                        size=item.get('size')
+                    )
+            
+            # Persistir en JSON (MockDB)
+            if _mockdb_active():
+                try:
+                    save_orders_to_fixture()
+                    save_order_items_to_fixture()
+                    print(f"✅ Pedido {order.order_number} guardado correctamente en JSON")
+                except Exception as e:
+                    print(f"❌ Error al persistir pedido: {e}")
+            
             cart.clear()
-            return render(request, 'order/created.html', {'order': order})
+            
+            # If no payment required, go directly to confirmation
+            if not order.is_payment_required():
+                order.paid = True
+                order.status = 'paid'  # Actualizar estado
+                order.save()
+                
+                # Persistir cambio de estado en JSON (MockDB)
+                if _mockdb_active():
+                    try:
+                        save_orders_to_fixture()
+                        print(f"✅ Pedido {order.order_number} marcado como pagado (sin pago requerido)")
+                    except Exception as e:
+                        print(f"❌ Error al persistir estado: {e}")
+                
+                return redirect('order:order_created', order.id)
+            
+            # Otherwise go to payment
+            return redirect('order:payment_process', order.id)
     else:
-        form = OrderCreateForm()
+        form = OrderCreateForm(initial=initial_data)
     return render(request, 'order/create.html', {'cart': cart, 'form': form})
+
+def _get_braintree_gateway():
+    """
+    Lazily build and validate a Braintree gateway. Prefer settings.BRAINTREE_CONF,
+    then fall back to the imported BRAINTREE_CONF. Raise ImproperlyConfigured if
+    credentials are missing.
+    """
+    conf = getattr(settings, 'BRAINTREE_CONF', None) or globals().get('BRAINTREE_CONF', None)
+    if not conf:
+        raise ImproperlyConfigured(
+            "BRAINTREE_CONF not found. Define settings.BRAINTREE_CONF or set config.braintreeSettings.BRAINTREE_CONF."
+        )
+    merchant = getattr(conf, 'merchant_id', None)
+    public = getattr(conf, 'public_key', None)
+    private = getattr(conf, 'private_key', None)
+    if not merchant or not public or not private:
+        raise ImproperlyConfigured(
+            "BRAINTREE_CONF missing credentials (merchant_id/public_key/private_key). "
+            "Set BRAINTREE_MERCHANT_ID, BRAINTREE_PUBLIC_KEY and BRAINTREE_PRIVATE_KEY."
+        )
+    return braintree.BraintreeGateway(conf)
+
+
+def payment_process(request, order_id):
+    # get order (works with mockdb)
+    if _mockdb_active():
+        try:
+            order = Order.objects.get(id=order_id)
+        except Exception:
+            items = getattr(Order.objects, '_items', [])
+            try:
+                oid = int(order_id)
+            except Exception:
+                oid = order_id
+            order = next((o for o in items if int(getattr(o, 'id', 0) or 0) == oid), None)
+            if not order:
+                return render(request, 'order/payment.html', {'error': 'Pedido no encontrado (MockDB).'})
+    else:
+        order = get_object_or_404(Order, id=order_id)
+
+    # try to create gateway (render friendly error if config is missing)
+    try:
+        gateway = _get_braintree_gateway()
+    except ImproperlyConfigured as e:
+        return render(request, 'order/payment.html', {'order': order, 'error': str(e), 'client_token': None})
+
+    if request.method == 'POST':
+        nonce = request.POST.get('payment_method_nonce')
+        result = gateway.transaction.sale({
+            'amount': str(order.get_total_cost()),
+            'payment_method_nonce': nonce,
+            'options': {'submit_for_settlement': True}
+        })
+
+        if result.is_success:
+            order.paid = True
+            order.status = 'paid'  # Actualizar estado a pagado
+            if getattr(result, 'transaction', None) and getattr(result.transaction, 'id', None):
+                order.braintree_id = result.transaction.id
+            order.save()
+            
+            # Persistir en JSON (MockDB)
+            if _mockdb_active():
+                try:
+                    save_orders_to_fixture()
+                    print(f"✅ Pedido {order.order_number} marcado como pagado en JSON")
+                except Exception as e:
+                    print(f"❌ Error al persistir estado de pago: {e}")
+            
+            return redirect('order:order_created', order.id)
+        else:
+            client_token = None
+            try:
+                client_token = gateway.client_token.generate()
+            except Exception:
+                pass
+            return render(request, 'order/payment.html', {
+                'order': order,
+                'error': result.message,
+                'client_token': client_token
+            })
+    else:
+        client_token = None
+        try:
+            client_token = gateway.client_token.generate()
+        except Exception:
+            pass
+        return render(request, 'order/payment.html', {'order': order, 'client_token': client_token})
+
+def order_created(request, order_id):
+    if os.environ.get('USE_MOCKDB') == '1' or getattr(settings, 'USE_MOCKDB', False):
+        # Evitar acceso ORM cuando estamos en MockDB
+        try:
+            order = Order.objects.get(id=order_id)
+        except Exception:
+            items = getattr(Order.objects, '_items', [])
+            try:
+                oid = int(order_id)
+            except Exception:
+                oid = order_id
+            order = next((o for o in items if int(getattr(o, 'id', 0) or 0) == oid), None)
+            if not order:
+                return redirect('shop:product_list')
+    else:
+        order = get_object_or_404(Order, id=order_id)
+    
+    # Enviar correo de confirmación
+    _send_order_confirmation_email(order)
+    
+    return render(request, 'order/created.html', {'order': order})
+
+def _send_order_confirmation_email(order):
+    """Envía correo de confirmación del pedido al cliente."""
+    try:
+        import smtplib
+        import ssl
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        
+        subject = f'Confirmación de Pedido #{order.order_number} - Nexo Shoes'
+        
+        # Renderizar plantillas
+        html_message = render_to_string('emails/confirmation.html', {'order': order})
+        text_message = render_to_string('emails/confirmation.txt', {'order': order})
+        
+        try:
+            send_mail(
+                subject=subject,
+                message=text_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[order.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            print(f"Correo enviado a {order.email}")
+        except TypeError as e:
+            # Si falla por el error de keyfile, usar SMTP directamente
+            if 'keyfile' in str(e):
+                print("Usando envío SMTP directo (fix para Python 3.12+)")
+                
+                msg = MIMEMultipart('alternative')
+                msg['Subject'] = subject
+                msg['From'] = settings.EMAIL_HOST_USER
+                msg['To'] = order.email
+                
+                part1 = MIMEText(text_message, 'plain', 'utf-8')
+                part2 = MIMEText(html_message, 'html', 'utf-8')
+                msg.attach(part1)
+                msg.attach(part2)
+                
+                context = ssl.create_default_context()
+                with smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT) as server:
+                    server.starttls(context=context)
+                    server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+                    server.send_message(msg)
+                
+                print(f"Correo enviado a {order.email}")
+            else:
+                raise
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")

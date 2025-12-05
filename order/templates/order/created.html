@@ -1,11 +1,118 @@
 {% extends "shop/base/base.html" %}
 {% block title %}
-Thank you
+Confirmación de Pedido
 {% endblock %}
 {% block content %}
-<div class="container text-center mt-5 mb-5">
-    <h1>Thank you</h1>
-    <h3>Your order has been successfully completed. Your order number is
-    <strong>{{ order.id }}</strong>.</h3>
+<div class="bg-light py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 mb-0">
+                <a href="{% url 'shop:product_list' %}">Menú Principal</a> 
+                <span class="mx-2 mb-0">/</span>
+                <strong class="text-black">Confirmación de pedido</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="site-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center py-5">
+                        <div style="font-size: 3em; color: #28a745; margin-bottom: 15px;">✓</div>
+                        <h2 class="mb-3">¡Pedido Confirmado!</h2>
+                        <p class="text-muted mb-2">Número de pedido: <strong>#{{ order.order_number }}</strong></p>
+                        {% if order.payment_method == 'cod' %}
+                            <div class="alert alert-warning" role="alert">
+                                <strong>Pago a Contrareembolso</strong><br>
+                                Pagarás {{ order.total|floatformat:"2" }}€ a la entrega
+                            </div>
+                        {% elif order.shipping_method == 'store' %}
+                            <div class="alert alert-info" role="alert">
+                                <strong>Recogida en Tienda</strong><br>
+                                Tu pedido está listo para recoger. Total: {{ order.total|floatformat:"2" }}€
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success" role="alert">
+                                <strong>Pedido Pagado</strong><br>
+                                Se enviará a tu domicilio
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Artículos del Pedido</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for item in order.items.all %}
+                        <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                            <div>
+                                <strong>{{ item.product.name }}</strong>
+                                {% if item.size %}<br><small class="text-muted">Talla: {{ item.size }}</small>{% endif %}
+                                <br><small>Cantidad: {{ item.quantity }}</small>
+                            </div>
+                            <strong>{{ item.get_cost|floatformat:"2" }}€</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Resumen de Costos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <strong>{{ order.subtotal|floatformat:"2" }}€</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                            <span>Envío:</span>
+                            <strong>{{ order.shipping_cost|floatformat:"2" }}€</strong>
+                        </div>
+                        <div class="d-flex justify-content-between" style="font-size: 1.2em;">
+                            <strong>Total:</strong>
+                            <strong>{{ order.total|floatformat:"2" }}€</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Información de Entrega</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            <strong>Método de Entrega:</strong><br>
+                            {{ order.get_shipping_method_display }}
+                        </p>
+                        {% if order.shipping_method == 'home' %}
+                        <p class="mb-2">
+                            <strong>Dirección:</strong><br>
+                            {{ order.address }}<br>
+                            {{ order.city }}, {{ order.postal_code }}
+                        </p>
+                        {% endif %}
+                        <p class="mb-2">
+                            <strong>Teléfono:</strong><br>
+                            {{ order.phone }}
+                        </p>
+                        <p class="mb-0">
+                            <strong>Email:</strong><br>
+                            {{ order.email }}
+                        </p>
+                    </div>
+                </div>
+                
+                <a href="{% url 'shop:product_list' %}" class="btn btn-primary btn-block mt-4">
+                    Volver a la Tienda
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

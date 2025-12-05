@@ -1,126 +1,123 @@
 {% extends "shop/base/base.html" %}
-{% load static %}
 {% load crispy_forms_tags %}
-
 {% block title %}
-Tu Carrito
+Pago
 {% endblock %}
-
 {% block content %}
 <div class="bg-light py-3">
     <div class="container">
         <div class="row">
-            <div class="col-md-12 mb-0"><a href="index.html">Menú Principal</a> <span class="mx-2 mb-0">/</span> <strong
-                    class="text-black">Carrito</strong></div>
+            <div class="col-md-12 mb-0">
+                <a href="index.html">Menú Principal</a> 
+                <span class="mx-2 mb-0">/</span> 
+                <strong class="text-black">Carrito</strong>
+            </div>
         </div>
     </div>
-  </div>
 </div>
 
 <div class="site-section">
     <div class="container">
         <div class="row mb-5">
-            <form class="col-md-12" method="post">
-                <div class="site-blocks-table">
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th class="product-thumbnail">Imagen</th>
-                                <th class="product-name">Producto</th>
-                                <th class="product-price">Precio</th>
-                                <th class="product-quantity">Cantidad</th>
-                                <th class="product-total">Total</th>
-                                <th class="product-remove">Eliminar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>{% for item in cart %}
-                                {% with product=item.product %}
-                            <tr>
-                                <td class="product-thumbnail">
-                                    <img src="{{ product.image.url }}" alt="Image" class="img-fluid">
-                                </td>
-                                <td class="product-name">
-                                    <h2 class="h5 text-black">{{ product.name }}</h2>
-                                </td>
-                                <td>${{ item.price }}</td>
-                                <td>
-                                    <div class="input-group mb-3" style="max-width: 120px;">
-                                        <div class="input-group-prepend">
-                                            <form action="{% url "cart:cart_add" product.id %}" method="post">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body p-0">
+                        <div style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-hover mb-0">
+                                <thead style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <tr>
+                                        <th class="border-0 py-3">Producto</th>
+                                        <th class="border-0 py-3 text-center">Talla</th>
+                                        <th class="border-0 py-3 text-center">Precio</th>
+                                        <th class="border-0 py-3 text-center">Cantidad</th>
+                                        <th class="border-0 py-3 text-center">Total</th>
+                                        <th class="border-0 py-3 text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in cart %}
+                                    {% with product=item.product %}
+                                    <tr>
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                                <h6 class="mb-0 ml-3 font-weight-normal">{{ product.name }}</h6>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            {% if item.size %}
+                                                <span class="badge badge-secondary">{{ item.size }}</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <span class="text-muted">${{ item.price }}</span>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <form action="{% url "cart:cart_update_quantity" product.id %}" method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="quantity" value="{{ item.quantity|add:"-1" }}">
+                                                    <input type="hidden" name="size" value="{{ item.size }}">
+                                                    <button class="btn btn-sm btn-outline-secondary" type="submit" {% if item.quantity <= 1 %}disabled{% endif %}>
+                                                        <span>-</span>
+                                                    </button>
+                                                </form>
+                                                <span class="mx-3 font-weight-bold">{{ item.quantity }}</span>
+                                                <form action="{% url "cart:cart_update_quantity" product.id %}" method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="quantity" value="{{ item.quantity|add:"1" }}">
+                                                    <input type="hidden" name="size" value="{{ item.size }}">
+                                                    <button class="btn btn-sm btn-outline-secondary" type="submit">
+                                                        <span>+</span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <strong>{{ item.total_price }}€</strong>
+                                        </td>
+                                        <td class="align-middle text-center">
+                                            <form method="post" action="{% url 'cart:cart_remove' item.product.id %}">
                                                 {% csrf_token %}
-                                                {{ item.update_quantity_form.quantity }}
-                                                {{ item.update_quantity_form.override }}
-                                                <input class="btn btn-outline-primary js-btn-plus" type="submit"
-                                                    value="Update">
+                                                <input type="hidden" name="size" value="{{ item.size }}">
+                                                <button type="submit" class="btn btn-sm btn-danger rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Eliminar producto" onclick="return confirm('¿Estás seguro de que deseas eliminar este producto del carrito?');">
+                                                    <span class="icon-delete"></span>
+                                                </button>
                                             </form>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>${{ item.total_price }}</td>
-                                <td><a href="{% url "cart:cart_remove" product.id %}"
-                                        class="btn btn-primary btn-sm">X</a></td>
-                            </tr>
-                            {% endwith %}
-                            {% endfor %}
-                            </tr>
-    <div class="row">
-      <div class="col-md-6">
-        <div class="row mb-5">
-          <div class="col-md-6 mb-3 mb-md-0">
-            <button onclick='window.location="{% url "shop:product_list" %}"'
-                    class="btn btn-primary btn-sm btn-block">
-              Continue Shopping
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-primary btn-sm btn-block">Checkout</button>
-          </div>
-        </div>
-      </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="row mb-5">
-                    <div class="col-md-6 mb-3 mb-md-0">
-                        <button onclick="window.location='{% url "shop:product_list" %}'" class="btn btn-primary btn-sm btn-block">Continuar comprando</button>
-                    </div>
-                    <div class="col-md-6">
-                        <button class="btn btn-outline-primary btn-sm btn-block">Ir a caja</button>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 pl-5">
-                <div class="row justify-content-end">
-                    <div class="col-md-7">
-                        <div class="row">
-                            <div class="col-md-12 text-right border-bottom mb-5">
-                                <h3 class="text-black h4 text-uppercase">Total del carro</h3>
-                            </div>
-                        </div>
-
-                        <div class="row mb-5">
-                            <div class="col-md-6">
-                                <span class="text-black">Total</span>
-                            </div>
-                            <div class="col-md-6 text-right">
-                                <strong class="text-black">{{ cart.get_total_price|floatformat:"2" }}</strong>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12">
-                                <button class="btn btn-primary btn-lg py-3 btn-block"
-                                    onclick="window.location='{% url "order:order_create" %}'">Proceder al pago</button>
-                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endwith %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-          </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h3 class="h5 text-uppercase mb-4 font-weight-bold">Total del carro</h3>
+                        <div class="d-flex justify-content-between mb-4 pb-3 border-bottom">
+                            <span class="text-muted">Subtotal</span>
+                            <strong class="h5 mb-0">{{ cart.get_total_price|floatformat:"2" }}€</strong>
+                        </div>
+                        <button class="btn btn-primary btn-lg btn-block mb-3 py-3" onclick="window.location='{% url "order:order_create" %}'">
+                            <i class="fa fa-shopping-cart mr-2"></i>Proceder al pago
+                        </button>
+                        <button onclick="window.location='{% url "shop:product_list" %}'" class="btn btn-outline-secondary btn-block mb-2">
+                            <i class="fa fa-arrow-left mr-2"></i>Continuar comprando
+                        </button>
+                        <button onclick="if(confirm('¿Estás seguro de que deseas vaciar el carrito?')) window.location='{% url "cart:cart_clear" %}'" class="btn btn-outline-danger btn-block">
+                            <span class="icon-delete_sweep mr-2"></span>Vaciar carrito
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 {% endblock %}

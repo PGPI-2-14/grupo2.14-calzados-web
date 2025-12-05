@@ -1,0 +1,53 @@
+============================================
+        ¡PEDIDO CONFIRMADO!
+============================================
+
+Hola {{ order.first_name }} {{ order.last_name }},
+
+Número de pedido: #{{ order.order_number }}
+
+{% if order.payment_method == 'cod' %}
+** PAGO A CONTRAREEMBOLSO **
+Pagarás ${{ order.total|floatformat:"2" }} a la entrega
+{% elif order.shipping_method == 'store' %}
+** RECOGIDA EN TIENDA **
+Tu pedido está listo para recoger. Total: ${{ order.total|floatformat:"2" }}
+{% else %}
+** PEDIDO PAGADO **
+Se enviará a tu domicilio
+{% endif %}
+
+--------------------------------------------
+ARTÍCULOS DEL PEDIDO
+--------------------------------------------
+{% for item in order.items.all %}
+{{ item.product.name }}
+{% if item.size %}Talla: {{ item.size }}{% endif %}
+Cantidad: {{ item.quantity }}
+Precio: ${{ item.get_cost|floatformat:"2" }}
+
+{% endfor %}
+--------------------------------------------
+RESUMEN DE COSTOS
+--------------------------------------------
+Subtotal:    ${{ order.subtotal|floatformat:"2" }}
+Envío:       ${{ order.shipping_cost|floatformat:"2" }}
+--------------------------------------------
+TOTAL:       ${{ order.total|floatformat:"2" }}
+============================================
+
+--------------------------------------------
+INFORMACIÓN DE ENTREGA
+--------------------------------------------
+Método de Entrega: {{ order.get_shipping_method_display }}
+{% if order.shipping_method == 'home' %}
+Dirección: {{ order.address }}
+           {{ order.city }}, {{ order.postal_code }}
+{% endif %}
+Teléfono: {{ order.phone }}
+Email: {{ order.email }}
+
+--------------------------------------------
+
+Gracias por tu compra,
+Nexo Shoes

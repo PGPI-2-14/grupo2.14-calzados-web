@@ -1,0 +1,62 @@
+{% extends "shop/base/base.html" %}
+{% load static %}
+
+{% block title %}
+Registro
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <h2 class="text-center mb-4">Crear cuenta</h2>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+          <label for="id_first_name">Nombre</label>
+          <input type="text" name="first_name" id="id_first_name" class="form-control" required>
+        </div>
+        <div class="form-group mb-3">
+          <label for="id_last_name">Apellidos</label>
+          <input type="text" name="last_name" id="id_last_name" class="form-control" required>
+        </div>
+        <div class="form-group mb-3">
+          <label for="id_email">Email</label>
+          <input type="email" name="email" id="id_email" class="form-control" required>
+        </div>
+        <div class="form-group mb-3">
+          <label for="id_address">Dirección</label>
+          <input type="text" name="address" id="id_address" class="form-control" required>
+        </div>
+        <div class="form-group mb-3">
+          <label for="id_postal_code">Código postal</label>
+          <input type="text" name="postal_code" id="id_postal_code" class="form-control" required>
+        </div>
+        <div class="form-group mb-3">
+          <label for="id_city">Ciudad</label>
+          <input type="text" name="city" id="id_city" class="form-control" required>
+        </div>
+        <div class="form-group mb-3">
+          <label for="id_phone_number">Número de telefono</label>
+          <input type="text" name="phone_number" id="id_phone_number" class="form-control" required>
+        </div>
+        <div class="form-group mb-3">
+          <label for="id_password1">Contraseña</label>
+          <input type="password" name="password1" id="id_password1" class="form-control" required>
+        </div>
+        <div class="form-group mb-3">
+          <label for="id_password2">Confirmar contraseña</label>
+          <input type="password" name="password2" id="id_password2" class="form-control" required>
+        </div>
+
+        <div class="d-grid mb-2">
+          <button type="submit" class="btn btn-primary btn-block">Registrarse</button>
+        </div>
+        <p class="text-center small mt-2">¿Ya tienes cuenta? <a href="{% url 'accounts:login' %}">Inicia sesión</a></p>
+      </form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
